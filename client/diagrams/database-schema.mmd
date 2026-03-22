@@ -1,0 +1,48 @@
+erDiagram
+    USER ||--o{ BOOKING : "has"
+    CAR ||--o{ BOOKING : "has"
+
+    USER {
+        ObjectId _id PK
+        String name
+        String email
+        String password
+        Number role "0=user, 1=admin"
+        Date createdAt
+        Date updatedAt
+    }
+
+    CAR {
+        ObjectId _id PK
+        String carName
+        Buffer carImage
+        String carCategory "Sedan,SUV,Hatchback,Coupe,Convertible,Wagon,Van,Pickup,Sports"
+        String carYear
+        String carSeats
+        String carFuel "Diesel,Hybrid,Petrol"
+        String carGear "Manual,Automatic"
+        String location
+        String carRent "daily rate"
+        Boolean isAvailable "default: true"
+        Date createdAt
+        Date updatedAt
+    }
+
+    BOOKING {
+        ObjectId _id PK
+        ObjectId carId FK "references Car"
+        ObjectId userId FK "references User"
+        String fromDate
+        String toDate
+        String status "pending,confirmed,cancelled"
+        String TotalPay
+        Date createdAt
+        Date updatedAt
+    }
+
+    VISITER {
+        ObjectId _id PK
+        String email
+        Date createdAt
+        Date updatedAt
+    }

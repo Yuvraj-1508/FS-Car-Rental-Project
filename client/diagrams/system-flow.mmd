@@ -1,0 +1,88 @@
+flowchart LR
+  %% Client side
+  Browser["Browser (React)"]
+  Browser --> Router["React Router (App.jsx)"]
+  Router --> Home["HomePage"]
+  Router --> Cars["Cars Page (/cars)"]
+  Router --> CarDetails["Car Details (/car/:id)"]
+  Router --> Bookings["My Bookings (/bookings)"]
+  Router --> Admin["Admin Area (/admin)"]
+  Router --> About["About (/about)"]
+  Home -->|GET /api/cars| API_CARS
+  Cars -->|GET /api/cars| API_CARS
+  CarDetails -->|GET /api/car/:id| API_CAR_ID
+  Bookings -->|GET /api/myBooking (auth)| API_MYBOOKING
+  Bookings -->|POST /api/new/booking (auth)| API_NEWBOOKING
+  Home -->|POST /new/visiter| API_VISITER
+
+  %% Server side
+  subgraph Server[Express Server]
+    direction TB
+    API_CARS["API: GET /api/cars"]
+    API_CAR_ID["API: GET /api/car/:id"]
+    API_NEWBOOKING["API: POST /api/new/booking (auth)"]
+    API_MYBOOKING["API: GET /api/myBooking (auth)"]
+    API_USERS_ALL["API: GET /api/all/users"]
+    API_REGISTER["API: POST /api/register"]
+    API_LOGIN["API: POST /api/login"]
+    API_VISITER["API: POST /new/visiter"]
+  end
+
+  %% Middleware
+  API_NEWBOOKING -.->|auth middleware| AUTH["Auth Middleware (Auth.js)"]
+  API_MYBOOKING -.-> AUTH
+
+  %% Controllers
+  subgraph Controllers[Controllers]
+    direction TB
+    CAR_CTRL["CarController"]
+    BOOKING_CTRL["BookingController"]
+    USER_CTRL["UserController"]
+  end
+
+  API_CARS --> CAR_CTRL
+  API_CAR_ID --> CAR_CTRL
+  API_NEWBOOKING --> BOOKING_CTRL
+  API_MYBOOKING --> BOOKING_CTRL
+  API_USERS_ALL --> USER_CTRL
+  API_REGISTER --> USER_CTRL
+  API_LOGIN --> USER_CTRL
+  API_VISITER --> VISITER_CTRL["Visiter Model (simple handler)"]
+
+  %% Models and DB
+  subgraph Models[Models & DB]
+    direction TB
+    CAR_MODEL["CarModel"]
+    BOOKING_MODEL["BookingModel"]
+    USER_MODEL["UserModel"]
+    VISITER_MODEL["visiter.model"]
+    DB["MongoDB (connectDB)"]
+  end
+
+  CAR_CTRL --> CAR_MODEL
+  BOOKING_CTRL --> BOOKING_MODEL
+  USER_CTRL --> USER_MODEL
+  VISITER_CTRL --> VISITER_MODEL
+
+  CAR_MODEL --> DB
+  BOOKING_MODEL --> DB
+  USER_MODEL --> DB
+  VISITER_MODEL --> DB
+
+  %% Admin flows
+  Admin -->|Admin UI calls| API_USERS_ALL
+  Admin -->|Admin UI calls| API_CARS
+  Admin -->|Admin: update booking| API_UPDATE_BOOKING["API: PUT /api/all/booking/:id"]
+  API_UPDATE_BOOKING --> BOOKING_CTRL
+  API_UPDATE_BOOKING --> AUTH
+
+  %% Notes
+  classDef api stroke:#333,stroke-width:1px,fill:#f9f,stroke-dasharray: 5 5;
+  class API_CARS,API_CAR_ID,API_NEWBOOKING,API_MYBOOKING,API_USERS_ALL,API_REGISTER,API_LOGIN,API_VISITER api;
+  
+  %% Legend
+  subgraph Legend
+    Client["Client (React)"]
+    ServerNode["Server (Express)"]
+    DBNode["Database (MongoDB)"]
+  end

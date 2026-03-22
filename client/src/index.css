@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+/* @plugin "daisyui"; */
+
+/* Utility to hide scrollbars while maintaining scroll functionality */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+}
+
+/* Professional Print Styles for Invoice Generation */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .invoice-content,
+    .invoice-content * {
+        visibility: visible;
+    }
+
+    .invoice-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+    }
+
+    /* Hide the download and close buttons during print */
+    .no-print {
+        display: none !important;
+    }
+}
