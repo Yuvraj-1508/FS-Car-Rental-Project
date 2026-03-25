@@ -1,4 +1,4 @@
-Project Title: Project Name - FS Car Rental Project
+Project Title:- FS Car Rental Project
 
 . Formal Introduction:
 --------------------------------------------------------------------------------
