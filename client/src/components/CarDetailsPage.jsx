@@ -145,6 +145,9 @@ const BookCar = () => {
                             with our high-tier concierge insurance covering every mile.
                         </p>
                     </div>
+
+                    {/* Review Section */}
+                    <ReviewSection carId={car._id} />
                 </div>
 
                 {/* Right: Booking Interface */}
@@ -152,6 +155,77 @@ const BookCar = () => {
                     <BookingForm car={car} />
                 </div>
             </div>
+        </div>
+    );
+};
+
+const ReviewSection = ({ carId }) => {
+    const [reviews, setReviews] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                const res = await axios.get(`${base_url}/api/car-reviews/${carId}`);
+                if (res.data.success) setReviews(res.data.reviews);
+            } catch (error) {
+                console.error("Reviews error:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchReviews();
+    }, [carId]);
+
+    const avg = reviews.length ? (reviews.reduce((a, b) => a + b.rating, 0) / reviews.length).toFixed(1) : 0;
+
+    return (
+        <div className="mt-16">
+            <div className="flex justify-between items-end mb-8 border-b border-slate-100 dark:border-slate-800 pb-8">
+                <div>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-3">
+                        <FaStar className="text-amber-500" /> Experiences
+                    </h3>
+                    <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase mt-2">Asset Field Reports</p>
+                </div>
+                {reviews.length > 0 && (
+                    <div className="text-right">
+                        <div className="flex gap-1 mb-2">
+                            {[1, 2, 3, 4, 5].map(i => (
+                                <FaStar key={i} size={12} className={i <= Math.round(avg) ? "text-amber-500" : "text-slate-200"} />
+                            ))}
+                        </div>
+                        <p className="text-3xl font-black text-slate-900 dark:text-white">{avg}</p>
+                    </div>
+                )}
+            </div>
+
+            {loading ? (
+                <div className="space-y-4 animate-pulse">
+                    <div className="h-32 bg-slate-50 dark:bg-slate-900 rounded-[2rem]"></div>
+                </div>
+            ) : reviews.length > 0 ? (
+                <div className="grid gap-6">
+                    {reviews.map(r => (
+                        <div key={r._id} className="p-8 bg-slate-50 dark:bg-slate-900/50 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                            <div className="flex justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-[10px] font-black">{r.userId?.name?.charAt(0)}</div>
+                                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">{r.userId?.name}</span>
+                                </div>
+                                <div className="flex gap-0.5">
+                                    {[1, 2, 3, 4, 5].map(i => <FaStar key={i} size={10} className={i <= r.rating ? "text-amber-500" : "text-slate-200"} />)}
+                                </div>
+                            </div>
+                            <p className="text-slate-500 dark:text-slate-400 italic text-sm font-medium leading-relaxed">"{r.comment}"</p>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="py-12 text-center bg-slate-50 dark:bg-slate-900/40 rounded-[2.5rem] border border-dashed border-slate-200">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Intelligence Data Available</p>
+                </div>
+            )}
         </div>
     );
 };

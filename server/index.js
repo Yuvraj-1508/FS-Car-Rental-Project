@@ -29,6 +29,8 @@ app.use("/api", UserRoutes)
 app.use("/api", CarRoutes)
 app.use("/api", BookingRoutes)
 app.use("/api", require("./routes/PaymentRoutes"));
+app.use("/api", require("./routes/ReviewRoutes"));
+app.use("/api", require("./routes/WishlistRoutes"));
 
 //visiter
 app.post("/new/visiter", async (req, res) => {

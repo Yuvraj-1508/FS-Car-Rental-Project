@@ -4,6 +4,7 @@ import Layout from "./layout/Layout";
 import { FaCalendarAlt, FaMapMarkerAlt, FaCar, FaClock, FaCheckCircle, FaTimesCircle, FaTrashAlt, FaGasPump, FaCogs, FaChevronRight } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 
 const base_url = import.meta.env.VITE_BASE_URL || "http://localhost:9000";
 
@@ -25,10 +26,17 @@ const statusConfig = {
 
 const BookingOrder = () => {
     const [bookings, setBookings] = useState([]);
+    const [allBookings, setAllBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [activeTab, setActiveTab] = useState("active");
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [reviewingBooking, setReviewingBooking] = useState(null);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState("");
+    const [submittingReview, setSubmittingReview] = useState(false);
 
     const getBookings = async () => {
         const token = localStorage.getItem("Authorization");
@@ -40,12 +48,13 @@ const BookingOrder = () => {
         try {
             setLoading(true);
             const res = await axios.get(`${base_url}/api/myBooking`, {
-                headers: {
-                    Authorization: token,
-                },
+                headers: { Authorization: token },
             });
-            const sortedBookings = (res.data.result || []).sort((a, b) => new Date(a.fromDate) - new Date(b.fromDate));
-            setBookings(sortedBookings);
+
+            const fetched = (res.data.result || []).sort((a, b) => new Date(a.fromDate) - new Date(b.fromDate));
+            setAllBookings(fetched);
+            filterBookings(fetched, activeTab);
+
         } catch (err) {
             setError(err.response?.data?.message || "Failed to fetch bookings");
             toast.error("Error loading bookings");
@@ -53,6 +62,26 @@ const BookingOrder = () => {
             setLoading(false);
         }
     };
+
+    const isFinished = (toDate) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const end = new Date(toDate);
+        end.setHours(0, 0, 0, 0);
+        return end < today;
+    };
+
+    const filterBookings = (list, tab) => {
+        const filtered = list.filter((b) => {
+            const finished = isFinished(b.toDate);
+            return tab === "active" ? !finished : finished;
+        });
+        setBookings(filtered);
+    };
+
+    useEffect(() => {
+        filterBookings(allBookings, activeTab);
+    }, [activeTab, allBookings]);
 
     const handleCancelBooking = async (id) => {
         if (!window.confirm("Are you sure you want to cancel this booking?")) return;
@@ -64,13 +93,32 @@ const BookingOrder = () => {
             );
             if (res.data.success) {
                 toast.success("Booking cancelled successfully");
-                setBookings((prev) => 
-                    prev.map((b) => b._id === id ? { ...b, status: "cancelled" } : b)
-                );
+                setAllBookings(prev => prev.map(b => b._id === id ? { ...b, status: 'cancelled' } : b));
             }
         } catch (err) {
-            console.error("Error cancelling booking:", err);
             toast.error("Failed to cancel booking");
+        }
+    };
+
+    const handleReviewSubmit = async () => {
+        if (!reviewComment) return toast.error("Field notes required");
+        setSubmittingReview(true);
+        try {
+            const token = localStorage.getItem("Authorization");
+            await axios.post(`${base_url}/api/new-review`, {
+                carId: reviewingBooking.carId._id,
+                bookingId: reviewingBooking._id,
+                rating: reviewRating,
+                comment: reviewComment
+            }, { headers: { Authorization: token } });
+
+            toast.success("Intelligence filed successfully");
+            setShowReviewModal(false);
+            setReviewComment("");
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Filing failed");
+        } finally {
+            setSubmittingReview(false);
         }
     };
 
@@ -120,10 +168,34 @@ const BookingOrder = () => {
                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
                     My <span className="text-blue-600">Bookings</span>
                 </h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-4 font-medium">
-                    Manage your upcoming journeys and review past rentals.
+                <p className="text-slate-500 dark:text-slate-400 mt-4 font-medium uppercase text-[10px] tracking-[0.3em]">
+                    Fleet Command & Logistics
                 </p>
             </motion.div>
+
+            {/* Navigation Tabs */}
+            <div className="flex justify-center mb-16 px-4">
+                <div className="inline-flex p-1.5 bg-slate-100 dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-inner">
+                    <button
+                        onClick={() => setActiveTab("active")}
+                        className={`px-8 md:px-12 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${activeTab === "active"
+                            ? "bg-white dark:bg-slate-800 text-blue-600 shadow-xl shadow-blue-500/5 translate-y-[-1px]"
+                            : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            }`}
+                    >
+                        Active Fleet
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("history")}
+                        className={`px-8 md:px-12 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${activeTab === "history"
+                            ? "bg-white dark:bg-slate-800 text-blue-600 shadow-xl shadow-blue-500/5 translate-y-[-1px]"
+                            : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            }`}
+                    >
+                        Mission History
+                    </button>
+                </div>
+            </div>
 
             {/* List */}
             <div className="space-y-10">
@@ -211,8 +283,17 @@ const BookingOrder = () => {
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3 mt-8 lg:mt-0 w-full lg:w-auto justify-end">
-                                        {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                                    <div className="flex flex-wrap items-center gap-3 mt-8 lg:mt-0 w-full lg:w-auto justify-end">
+                                        {activeTab === 'history' && (
+                                            <button
+                                                onClick={() => { setReviewingBooking(booking); setShowReviewModal(true); }}
+                                                className="flex items-center gap-2 px-6 py-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 hover:bg-amber-600 hover:text-white rounded-[14px] font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 group/review"
+                                            >
+                                                <FaStar size={14} className="group-hover/review:rotate-[360deg] transition-transform duration-500" />
+                                                <span>Share Intel</span>
+                                            </button>
+                                        )}
+                                        {activeTab === 'active' && (booking.status === 'pending' || booking.status === 'confirmed') && (
                                             <button
                                                 onClick={() => handleCancelBooking(booking._id)}
                                                 className="flex items-center gap-2 px-6 py-4 bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-600 hover:text-white rounded-[14px] font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 group/cancel"
@@ -249,7 +330,7 @@ const BookingOrder = () => {
                 </AnimatePresence>
             </div>
 
-            {/* Details & Invoice Modal */}
+            {/* Details & Invoice Modal - Professional Protocol */}
             <AnimatePresence>
                 {showModal && selectedBooking && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -258,109 +339,171 @@ const BookingOrder = () => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setShowModal(false)}
-                            className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
+                            className="absolute inset-0 bg-slate-950/70 backdrop-blur-md"
                         />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 30 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                            className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.25)] border border-slate-200 dark:border-slate-800 invoice-content flex flex-col"
+                            className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-slate-800 invoice-content flex flex-col max-h-[90vh]"
                         >
                             {/* Scrollable Content Container */}
-                            <div className="max-h-[85vh] overflow-y-auto scrollbar-hide">
-                                <div className="p-8 md:p-10">
-                                    <div className="flex justify-between items-start mb-8">
+                            <div className="overflow-y-auto custom-scrollbar p-10 md:p-14">
+                                <div className="space-y-12">
+                                    {/* Brand & ID Protocol */}
+                                    <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-10">
                                         <div>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-                                                    <FaCar size={12} />
-                                                </div>
-                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Official Invoice</span>
-                                            </div>
-                                            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Booking Summary</h2>
-                                            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">ID: #{selectedBooking._id.toUpperCase()}</p>
+                                            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-widest uppercase">LX<span className="text-blue-600">RENTAL</span></h2>
+                                            <p className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase mt-2">Premium Mobility Solutions</p>
                                         </div>
-                                        <button
-                                            onClick={() => setShowModal(false)}
-                                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors no-print"
-                                        >
-                                            <FaTimesCircle size={22} className="text-slate-300 hover:text-rose-500" />
-                                        </button>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-60">Deployment Token</p>
+                                            <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">#{selectedBooking._id.slice(-8).toUpperCase()}</p>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">{new Date().toLocaleDateString()}</p>
+                                        </div>
                                     </div>
 
-                                    <div className="space-y-6">
-                                        {/* Asset Details - More Compact */}
-                                        <div className="flex items-center gap-6 p-5 bg-slate-50 dark:bg-slate-950/50 rounded-[2rem] border border-slate-100 dark:border-slate-800">
-                                            <div className="w-24 h-20 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 shrink-0">
-                                                <img src={selectedBooking.carId?.carImage} className="w-full h-full object-cover" alt="" />
-                                            </div>
-                                            <div>
-                                                <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-2">{selectedBooking.carId?.carName}</h4>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-slate-500 bg-white dark:bg-slate-800 px-2 py-1 rounded-md border border-slate-100 dark:border-slate-700">
-                                                        <FaGasPump size={8} className="text-blue-500" /> {selectedBooking.carId?.carFuel}
-                                                    </span>
-                                                    <span className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-slate-500 bg-white dark:bg-slate-800 px-2 py-1 rounded-md border border-slate-100 dark:border-slate-700">
-                                                        <FaCogs size={8} className="text-indigo-500" /> {selectedBooking.carId?.carGear}
-                                                    </span>
-                                                </div>
+                                    {/* Asset Information - Refined */}
+                                    <div className="flex flex-col md:flex-row gap-8 items-center bg-slate-50 dark:bg-slate-950 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 relative group">
+                                        <div className="w-full md:w-56 h-36 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 flex-shrink-0 group-hover:shadow-xl transition-all duration-700 shadow-sm">
+                                            <img src={selectedBooking.carId?.carImage} alt="Car" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                        </div>
+                                        <div className="flex-1 w-full text-center md:text-left">
+                                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-2">Asset Assigned</p>
+                                            <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-3 leading-none">{selectedBooking.carId?.carName}</h3>
+                                            <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                                                <span className="text-[9px] font-black uppercase tracking-widest bg-white dark:bg-slate-800 text-slate-500 px-4 py-1.5 rounded-full border border-slate-100 dark:border-slate-800">{selectedBooking.carId?.carCategory}</span>
+                                                <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 px-4 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-800">Clearance Granted</span>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        {/* Logistics Grid - Optimized Spacing */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-1">
-                                            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-l-2 border-blue-600 pl-3">Rental Window</p>
-                                                <div className="space-y-3">
-                                                    <div>
-                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest opacity-60">Pickup</p>
-                                                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                            {new Date(selectedBooking.fromDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                        </p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest opacity-60">Handover</p>
-                                                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                            {new Date(selectedBooking.toDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-l-2 border-rose-500 pl-3">Pickup Location</p>
+                                    {/* Logistics Protocol Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="bg-white dark:bg-slate-900/50 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 space-y-6 shadow-sm">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                                <span className="w-1 h-3 bg-blue-600 rounded-full"></span> Deployment Window
+                                            </p>
+                                            <div className="space-y-4">
                                                 <div>
-                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest opacity-60">Base Region</p>
-                                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-1">{selectedBooking.carId?.location}</p>
-                                                    <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl text-[10px] text-slate-500 font-medium italic">
-                                                        "Vehicle will be waiting at our partner hub."
-                                                    </div>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60 mb-1">Pickup Execution</p>
+                                                    <p className="text-lg font-black text-slate-800 dark:text-slate-200">
+                                                        {new Date(selectedBooking.fromDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60 mb-1">Handover Protocol</p>
+                                                    <p className="text-lg font-black text-slate-800 dark:text-slate-200">
+                                                        {new Date(selectedBooking.toDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
+                                        <div className="bg-white dark:bg-slate-900/50 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 space-y-6 shadow-sm">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                                <span className="w-1 h-3 bg-rose-500 rounded-full"></span> Hub Logistics
+                                            </p>
+                                            <div>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60 mb-1">Base Region</p>
+                                                <p className="text-lg font-black text-slate-800 dark:text-slate-200">{selectedBooking.carId?.location}</p>
+                                                <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-950/50 rounded-2xl text-[11px] text-slate-500 dark:text-slate-400 font-medium italic leading-relaxed border border-slate-100 dark:border-slate-800/50">
+                                                    "Asset will be staged and prepped at the primary partner hub."
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                        {/* Financial Breakdown - Refined Height */}
-                                        <div className="pt-4">
-                                            <div className="flex justify-between items-center bg-blue-600 p-6 md:p-8 rounded-[2rem] text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -translate-y-16 translate-x-16"></div>
-                                                <div className="relative z-10">
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1">Total Impact</p>
-                                                    <p className="text-[10px] font-medium opacity-70">Paid & Verified</p>
-                                                </div>
-                                                <div className="relative z-10 text-right">
-                                                    <p className="text-4xl font-black tracking-tighter italic">₹{selectedBooking.TotalPay}</p>
-                                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-white/20 px-3 py-1 rounded-full mt-2 inline-block backdrop-blur-md">Settled Digitally</span>
-                                                </div>
+                                    {/* Financial Settlement */}
+                                    <div className="pt-4">
+                                        <div className="flex justify-between items-center bg-slate-950 dark:bg-blue-600 p-8 md:p-10 rounded-[2.5rem] text-white shadow-2xl shadow-blue-500/10 relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -translate-y-24 translate-x-24 group-hover:scale-150 transition-transform duration-700"></div>
+                                            <div className="relative z-10">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 opacity-50">Total Operational Cost</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest bg-white/10 w-fit px-3 py-1 rounded-md">Fully Settled · Verified</p>
+                                            </div>
+                                            <div className="relative z-10 text-right">
+                                                <p className="text-5xl font-black tracking-tighter italic">₹{selectedBooking.TotalPay}</p>
+                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mt-2 block">Direct Digital Transfer</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <button
                                         onClick={() => window.print()}
-                                        className="w-full mt-8 py-5 bg-slate-950 dark:bg-white text-white dark:text-slate-950 font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl hover:bg-blue-600 transition-all active:scale-95 no-print"
+                                        className="w-full mt-10 py-6 bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-black text-[11px] uppercase tracking-[0.4em] rounded-2xl hover:bg-blue-600 hover:text-white transition-all active:scale-95 no-print shadow-xl shadow-slate-900/10"
                                     >
-                                        Download Official Receipt
+                                        Export Deployment Protocol (PDF)
                                     </button>
                                 </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Review Submission Modal - New Intelligence Report */}
+            <AnimatePresence>
+                {showReviewModal && reviewingBooking && (
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowReviewModal(false)}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                            className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] p-10 shadow-[0_50px_100px_rgba(0,0,0,0.3)] overflow-hidden border border-slate-200 dark:border-slate-800"
+                        >
+                            <div className="text-center mb-10">
+                                <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/40 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                                    <FaStar size={24} />
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-widest leading-none">Share Mission Intel</h3>
+                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-3">Asset: {reviewingBooking.carId?.carName}</p>
+                            </div>
+
+                            <div className="space-y-10">
+                                <div className="flex justify-center gap-3">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <button 
+                                            key={i} 
+                                            onClick={() => setReviewRating(i)}
+                                            className={`transition-all duration-300 transform active:scale-95 ${reviewRating >= i ? "text-amber-500 scale-125" : "text-slate-100 dark:text-slate-800"}`}
+                                        >
+                                            <FaStar size={36} />
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-4">Deployment Field Notes</label>
+                                    <textarea
+                                        value={reviewComment}
+                                        onChange={(e) => setReviewComment(e.target.value)}
+                                        placeholder="Describe the vehicle performance, comfort, and logistics..."
+                                        rows={4}
+                                        className="w-full p-6 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2rem] text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-blue-500/50 outline-none transition-all resize-none shadow-inner"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={handleReviewSubmit}
+                                    disabled={submittingReview}
+                                    className="w-full py-5 bg-slate-950 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl shadow-blue-500/10 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-wait"
+                                >
+                                    {submittingReview ? "Archiving Signal..." : "Submit Experience Intel"}
+                                </button>
+                                
+                                <button 
+                                    onClick={() => setShowReviewModal(false)}
+                                    className="w-full text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors"
+                                >
+                                    Abort Operation
+                                </button>
                             </div>
                         </motion.div>
                     </div>

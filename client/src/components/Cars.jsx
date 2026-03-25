@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Layout from './layout/Layout'
-import { FaSearch, FaFilter, FaCar, FaUsers, FaCogs, FaMapMarkerAlt, FaGasPump, FaStar, FaChevronRight, FaSortAmountDownAlt, FaSortAmountUp } from "react-icons/fa";
+import { FaSearch, FaFilter, FaCar, FaUsers, FaCogs, FaMapMarkerAlt, FaGasPump, FaStar, FaChevronRight, FaSortAmountDownAlt, FaSortAmountUp, FaHeart } from "react-icons/fa";
 import { Link, useLocation } from 'react-router-dom'
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -210,8 +210,10 @@ const CarsShowroom = () => {
                                                 {car.carYear}
                                             </span>
                                         </div>
+                                        {/* Wishlist Toggle Button */}
+                                        <WishlistHeart carId={car._id} />
                                     </div>
-
+                                    
                                     {/* Info Section */}
                                     <div className="p-6 flex flex-col flex-grow">
                                         <div className="flex justify-between items-start mb-2">
@@ -281,6 +283,62 @@ const CarsShowroom = () => {
                 </main>
             </div>
         </div>
+    );
+};
+
+const WishlistHeart = ({ carId }) => {
+    const [isWishlisted, setIsWishlisted] = useState(false);
+    const token = localStorage.getItem("Authorization");
+
+    useEffect(() => {
+        const checkWishlist = async () => {
+            if (!token) return;
+            try {
+                const res = await axios.get(`${base_url}/api/wishlist/all`, {
+                    headers: { Authorization: token }
+                });
+                if (res.data.success) {
+                    setIsWishlisted(res.data.wishlist.some(w => w.carId?._id === carId));
+                }
+            } catch (err) { console.error("Wishlist check error:", err); }
+        };
+        checkWishlist();
+    }, [carId, token]);
+
+    const toggleWishlist = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!token) return toast.error("Please login to save vehicles");
+
+        try {
+            if (isWishlisted) {
+                await axios.delete(`${base_url}/api/wishlist/remove/${carId}`, {
+                    headers: { Authorization: token }
+                });
+                setIsWishlisted(false);
+                toast.success("Removed from wishlist");
+            } else {
+                await axios.post(`${base_url}/api/wishlist/add`, { carId }, {
+                    headers: { Authorization: token }
+                });
+                setIsWishlisted(true);
+                toast.success("Added to wishlist");
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Operation failed");
+        }
+    };
+
+    return (
+        <button 
+            onClick={toggleWishlist}
+            className={`absolute top-4 right-4 z-20 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 shadow-lg active:scale-90 ${isWishlisted 
+                ? 'bg-rose-500 text-white scale-110' 
+                : 'bg-white/80 dark:bg-slate-900/80 text-rose-500 hover:bg-rose-500 hover:text-white'}`}
+            title={isWishlisted ? "Remove from favorites" : "Save for later"}
+        >
+            <FaHeart size={16} className={isWishlisted ? "animate-bounce-short" : ""} />
+        </button>
     );
 };
 

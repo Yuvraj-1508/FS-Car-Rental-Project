@@ -54,17 +54,22 @@ const newBooking = async (req, res) => {
 
         const totalPay = rentPerDay * totalDays;
 
-        // Check if user already has an active booking for this car
-        const existingBooking = await BookingModel.findOne({
+        // Check if car is already booked for these dates (by anyone)
+        const overlappingBooking = await BookingModel.findOne({
             carId,
-            userId,
-            status: { $in: ["pending", "confirmed"] }
+            status: { $in: ["pending", "confirmed"] },
+            $or: [
+                {
+                    fromDate: { $lte: end.toISOString() },
+                    toDate: { $gte: start.toISOString() }
+                }
+            ]
         });
 
-        if (existingBooking) {
+        if (overlappingBooking) {
             return res.status(400).json({
                 success: false,
-                message: "You have already booked this car.",
+                message: "This vehicle is already reserved for the selected timeline. Please adjust your dates.",
             });
         }
 

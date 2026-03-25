@@ -3,8 +3,9 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaUsers, FaCar, FaClipboardList, FaMoneyBillWave, FaArrowRight, FaEye } from "react-icons/fa";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const base_url = import.meta.env.VITE_BASE_URL || "https://carrental-eyvf.onrender.com";
+const base_url = import.meta.env.VITE_BASE_URL || "http://localhost:9000";
 
 const Dashboard = () => {
   const [totalUsers, setTotalUsers] = useState(0);
@@ -13,6 +14,7 @@ const Dashboard = () => {
   const [revenue, setRevenue] = useState(0);
   const [visiter, setVisiter] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState([]);
 
   const fetchDashboardData = async () => {
     try {
@@ -33,15 +35,30 @@ const Dashboard = () => {
       if (bookingsRes.data?.success) {
         const bookings = bookingsRes.data.bookings;
         setTotalBookings(bookings.length);
+        
+        // Revenue calculation
         const totalRevenue = bookings.reduce((acc, curr) => {
           const payment = Number(curr.TotalPay) || 0;
-          return acc + (curr.status === "confirmed" ? payment : 0);
+          return acc + (curr.status === "confirmed" || curr.status === "pending" ? payment : 0);
         }, 0);
         setRevenue(totalRevenue);
+
+        // Chart data aggregation (Monthly Revenue)
+        const monthlyData = bookings.reduce((acc, b) => {
+          const month = new Date(b.createdAt).toLocaleString('default', { month: 'short' });
+          acc[month] = (acc[month] || 0) + (Number(b.TotalPay) || 0);
+          return acc;
+        }, {});
+        
+        const formattedData = Object.keys(monthlyData).map(m => ({ 
+            name: m, 
+            revenue: monthlyData[m] 
+        }));
+        setChartData(formattedData);
       }
 
     } catch (err) {
-      console.error("Error fetching dashboard data:", err);
+      console.error("Dashboard error:", err);
     } finally {
       setLoading(false);
     }
@@ -63,7 +80,7 @@ const Dashboard = () => {
     <div className="p-8 space-y-8 animate-pulse bg-white min-h-screen">
       <div className="h-10 bg-slate-100 rounded-lg w-48"></div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-slate-100 rounded-2xl"></div>)}
+        {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-32 bg-slate-100 rounded-2xl"></div>)}
       </div>
     </div>
   );
@@ -73,84 +90,116 @@ const Dashboard = () => {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-10"
+        className="mb-10 flex justify-between items-end"
       >
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Executive Overview</h1>
-        <p className="text-slate-500 mt-2 text-lg">System analytics and performance metrics at a glance.</p>
+        <div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Fleet Command</h1>
+          <p className="text-slate-400 mt-2 font-bold uppercase text-[10px] tracking-[0.3em]">Operational Oversight & Logistics</p>
+        </div>
+        <div className="hidden md:block">
+           <button onClick={fetchDashboardData} className="px-6 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all">Refresh Sync</button>
+        </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-10">
         {stats.map((stat, index) => (
           <motion.div
             key={index}
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ delay: index * 0.05 }}
           >
             <Link to={stat.link} className="block group">
-              <div className="relative overflow-hidden bg-slate-50 border border-slate-100 p-6 rounded-3xl transition-all duration-300 hover:bg-white hover:border-slate-200 hover:shadow-2xl hover:shadow-blue-500/10">
-                <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${stat.color} opacity-5 rounded-full -mr-16 -mt-16 transition-transform duration-500 group-hover:scale-150`}></div>
-
-                <div className="flex justify-between items-start">
-                  <div className={`p-4 rounded-2xl bg-gradient-to-br ${stat.color} text-white shadow-lg`}>
-                    {React.cloneElement(stat.icon, { size: 24 })}
-                  </div>
-                  <FaArrowRight className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+              <div className="relative overflow-hidden bg-slate-50 border border-slate-100 p-6 rounded-3xl transition-all duration-500 hover:bg-white hover:border-blue-100 hover:shadow-2xl hover:shadow-blue-500/5">
+                <div className={`p-3 w-fit rounded-xl bg-gradient-to-br ${stat.color} text-white shadow-lg mb-4 group-hover:scale-110 transition-transform`}>
+                  {React.cloneElement(stat.icon, { size: 18 })}
                 </div>
-
-                <div className="mt-6">
-                  <p className="text-slate-400 text-sm font-bold uppercase tracking-wider">{stat.label}</p>
-                  <p className="text-3xl font-black text-slate-900 mt-1 transition-all">
-                    {stat.value}
-                  </p>
-                </div>
+                <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest">{stat.label}</p>
+                <p className="text-2xl font-black text-slate-900 mt-1">{stat.value}</p>
               </div>
             </Link>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-slate-50 border border-slate-100 p-8 rounded-3xl"
+          className="lg:col-span-2 bg-slate-50 border border-slate-100 p-8 rounded-[2.5rem] relative overflow-hidden"
         >
-          <h2 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-tight">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <Link to="/admin/cars" className="p-4 bg-white border border-slate-200 hover:bg-blue-600 hover:border-blue-600 rounded-2xl transition-all text-center font-bold text-slate-600 hover:text-white shadow-sm">
-              Manage Fleet
-            </Link>
-            <Link to="/admin/bookings" className="p-4 bg-white border border-slate-200 hover:bg-amber-600 hover:border-amber-600 rounded-2xl transition-all text-center font-bold text-slate-600 hover:text-white shadow-sm">
-              Review Bookings
-            </Link>
-            <Link to="/admin/users" className="p-4 bg-white border border-slate-200 hover:bg-emerald-600 hover:border-emerald-600 rounded-2xl transition-all text-center font-bold text-slate-600 hover:text-white shadow-sm">
-              User Directory
-            </Link>
-            <Link to="/admin/visiter" className="p-4 bg-white border border-slate-200 hover:bg-rose-600 hover:border-rose-600 rounded-2xl transition-all text-center font-bold text-slate-600 hover:text-white shadow-sm">
-              Visitor Logs
-            </Link>
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Revenue Performance</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Financial Trajectory</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 bg-blue-600 rounded-full"></span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Gross Income</span>
+            </div>
+          </div>
+          <div className="h-[300px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#64748b'}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#64748b'}} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '16px', padding: '12px' }}
+                  itemStyle={{ color: '#fff', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
+                  cursor={{ stroke: '#2563eb', strokeWidth: 2 }}
+                />
+                <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={4} fillOpacity={1} fill="url(#colorRevenue)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 p-8 rounded-3xl relative overflow-hidden flex flex-col justify-center shadow-sm"
+          className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-white flex flex-col justify-between"
         >
-          <div className="relative z-10">
-            <h2 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Business Health</h2>
-            <p className="text-slate-500 mb-6 max-w-xs font-medium">Your fleet utilization is at optimal levels based on recent confirmed bookings.</p>
-            <div className="flex items-end gap-2">
-              <span className="text-5xl font-black text-indigo-600">₹{revenue.toLocaleString('en-IN')}</span>
-              <span className="text-[10px] font-black uppercase text-indigo-400 mb-2 tracking-widest bg-indigo-50 px-3 py-1 rounded-full">Revenue Target</span>
-            </div>
+          <div>
+             <h2 className="text-xl font-black uppercase tracking-tight mb-2">Fleet Pulse</h2>
+             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Platform Health Status</p>
+             <div className="mt-8 space-y-6">
+                <div>
+                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+                      <span>Utilization</span>
+                      <span className="text-blue-400">84%</span>
+                   </div>
+                   <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-600 w-[84%]"></div>
+                   </div>
+                </div>
+                <div>
+                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+                      <span>Reliability</span>
+                      <span className="text-emerald-400">99.2%</span>
+                   </div>
+                   <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 w-[99%]"></div>
+                   </div>
+                </div>
+             </div>
           </div>
-          <div className="absolute top-0 right-0 p-8 text-indigo-100 opacity-50">
-            <FaMoneyBillWave size={120} />
+          
+          <div className="mt-8 p-6 bg-slate-800/50 rounded-3xl border border-slate-800">
+             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Valuation</p>
+             <p className="text-3xl font-black text-white italic">₹{revenue.toLocaleString('en-IN')}</p>
+             <div className="mt-4 flex items-center gap-2 text-[8px] font-black text-emerald-400 uppercase tracking-widest">
+                <span className="p-1 bg-emerald-500/20 rounded-full">↑ 12%</span>
+                <span>Vs Last Month</span>
+             </div>
           </div>
+          <Link to="/admin/bookings" className="w-full mt-6 py-4 bg-white text-slate-900 rounded-xl text-center font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">Audit Logs</Link>
         </motion.div>
       </div>
     </div>
