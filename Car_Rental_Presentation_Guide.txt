@@ -1,4 +1,4 @@
-Project Title:- FS Car Rental Project
+Project Title:- Full Stack Car Rental Project
 
 . Formal Introduction:
 --------------------------------------------------------------------------------
