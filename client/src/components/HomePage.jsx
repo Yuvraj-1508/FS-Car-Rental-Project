@@ -77,7 +77,7 @@ const HeroSection = ({ stats }) => {
 
                         <h1 className="text-6xl lg:text-8xl font-black leading-[1.1] text-slate-900 dark:text-white tracking-tighter">
                             Drive your <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r dark:text-white to-emerald-500">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 dark:from-blue-400 dark:to-emerald-400">
                                 dream today.
                             </span>
                         </h1>
@@ -107,7 +107,7 @@ const HeroSection = ({ stats }) => {
                     >
                         <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent rounded-full blur-3xl transform -translate-x-10"></div>
                         <img
-                            src="/assets/HomeCar.png"
+                            src="/assets/hero.png"
                             alt="GoCar Fleet"
                             className="relative w-[120%] max-w-none h-auto object-contain transform -scale-x-100 drop-shadow-[0_35px_35px_rgba(0,0,0,0.25)] -translate-y-10 -translate-x-10 transition-transform duration-700"
                         />

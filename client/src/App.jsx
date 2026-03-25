@@ -15,7 +15,7 @@ import AdminCars from './components/Admin/components/AdminCars';
 import Visiter from './components/Admin/components/Visiter';
 import Payments from './components/Admin/components/Payments';
 import AboutUs from './components/AboutUs';
-import AdminLogin from './components/Admin/AdminLogin';
+
 
 const App = () => {
   useEffect(() => {
@@ -28,7 +28,7 @@ const App = () => {
     });
   }, []);
 
-  const isAdmin = localStorage.getItem('Authorization') && parseInt(localStorage.getItem('UserRole')) === 1;
+
 
   return (
     <>
@@ -41,7 +41,7 @@ const App = () => {
         <Route path='/about' element={<AboutUs />} />
         <Route
           path="/admin"
-          element={isAdmin ? <AdminPage /> : <AdminLogin />}
+          element={<AdminPage />}
         >
           <Route index element={<Dashboard />} />  {/* /admin */}
           <Route path="users" element={<Users />} /> {/* /admin/users */}

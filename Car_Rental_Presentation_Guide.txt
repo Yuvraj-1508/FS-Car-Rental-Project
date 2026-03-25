@@ -1,0 +1,43 @@
+Project Title: Project Name - FS Car Rental Project
+
+. Formal Introduction:
+--------------------------------------------------------------------------------
+This application is a full-featured, end-to-end car rental platform. 
+It’s designed to provide a premium booking experience for customers 
+while offering administrators a comprehensive control center. Our goal 
+is to make vehicle rentals faster, more secure, and extremely user-friendly 
+through a modern, high-speed interface.
+
+. TECHNOLOGY
+--------------------------------------------------------------------------------
+. FRONTEND (The User Experience):
+- React.js: For building a fast, scalable Single Page Application (SPA).
+- Tailwind CSS & DaisyUI: For creating a stunning, modern, and mobile-friendly UI.
+- React Router: For seamless navigation between different sections.
+- AOS & Framer Motion: For micro-interactions and smooth animations.
+
+. BACKEND (The Core Logic):
+- Node.js & Express: A powerful, event-driven server architecture.
+- MongoDB & Mongoose: A flexible NoSQL database to store car specs and bookings.
+- JWT (JSON Web Tokens): Ensuring secure logins and authorized access.
+- Bcrypt: Specialized for high-security password hashing.
+
+. ADMIN VS. USER ROLES 
+--------------------------------------------------------------------------------
+. ADMINISTRATOR CAPABILITIES:
+- Overview: Monitor revenue, active bookings, and total site visitors.
+- Car Management: Full control to add, edit, or delete vehicles from the system.
+- User Management: Oversight of all registered accounts and their activities.
+- Booking Control: Track and manage all customer reservations in real-time.
+
+. USER CAPABILITIES:
+--------------------------------------------------------------------------------
+- Smart Search: Browse the car with advanced filtering (by type, brand, price).
+- Deep Details: View high-quality images and specific car performance data.
+- Instant Booking: A streamlined booking flow with real-time status tracking.
+- Personal History: Access and manage personal rental history and current status.
+
+
+
+
+

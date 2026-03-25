@@ -76,7 +76,7 @@ const Visiter = () => {
                         onClick={getAllvisiter}
                         className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2"
                         title="Sync Intelligence"
-                    >
+                    >Refresh
                         <FaSync className={loading ? "animate-spin" : ""} />
                     </button>
                 </div>

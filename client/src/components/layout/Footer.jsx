@@ -11,7 +11,7 @@ const Footer = () => {
           <h2 className="text-2xl font-black text-blue-600 uppercase tracking-tighter">
             GO<span className="text-slate-900 dark:text-white">CAR</span>
           </h2>
-          <p className="text-sm opacity-80 leading-relaxed font-medium">
+          <p className="text-base opacity-80 leading-relaxed font-medium">
             Redefining the art of motion. Premium car rental services for those who command the extraordinary.
           </p>
           <div className="flex space-x-4">
@@ -25,8 +25,8 @@ const Footer = () => {
 
         {/* Quick Links */}
         <div className="space-y-6">
-          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-900 dark:text-white">Fleet Navigation</h4>
-          <ul className="space-y-4 text-sm font-bold uppercase tracking-widest text-[10px]">
+          <h4 className="text-xs font-black uppercase tracking-[0.3em] text-slate-900 dark:text-white">Fleet Navigation</h4>
+          <ul className="space-y-4 font-bold uppercase tracking-widest text-xs">
             <li><Link to="/" className="hover:text-blue-600 transition-colors">Home Base</Link></li>
             <li><Link to="/cars" className="hover:text-blue-600 transition-colors">Elite Fleet</Link></li>
             <li><Link to="/about" className="hover:text-blue-600 transition-colors">Our Ethos</Link></li>
@@ -35,8 +35,8 @@ const Footer = () => {
 
         {/* Resources */}
         <div className="space-y-6">
-          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-900 dark:text-white">Registry</h4>
-          <ul className="space-y-4 text-sm font-bold uppercase tracking-widest text-[10px]">
+          <h4 className="text-xs font-black uppercase tracking-[0.3em] text-slate-900 dark:text-white">Registry</h4>
+          <ul className="space-y-4 font-bold uppercase tracking-widest text-xs">
             <li><Link to="/help" className="hover:text-blue-600 transition-colors">Help Center</Link></li>
             <li><Link to="/terms" className="hover:text-blue-600 transition-colors">Terms of Service</Link></li>
             <li><Link to="/privacy" className="hover:text-blue-600 transition-colors">Privacy Protocol</Link></li>
@@ -45,8 +45,8 @@ const Footer = () => {
 
         {/* Contact */}
         <div className="space-y-6">
-          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-900 dark:text-white">Command Center</h4>
-          <ul className="space-y-4 text-[10px] font-bold uppercase tracking-widest">
+          <h4 className="text-xs font-black uppercase tracking-[0.3em] text-slate-900 dark:text-white">Command Center</h4>
+          <ul className="space-y-4 text-xs font-bold uppercase tracking-widest">
             <li className="text-slate-400">1234 Luxury Drive</li>
             <li className="text-slate-400">Surat Gujarat, 395006</li>
             <li className="text-blue-600">+91 987654 3210</li>
@@ -56,7 +56,7 @@ const Footer = () => {
       </div>
 
       {/* Bottom bar */}
-      <div className="mt-16 pt-8 border-t border-slate-100 dark:border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-40">
+      <div className="mt-16 pt-8 border-t border-slate-100 dark:border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-black uppercase tracking-widest opacity-40">
         <p>© {new Date().getFullYear()} GoCar. All rights reserved.</p>
         <div className="flex gap-8">
           <span>Precision Engineering</span>

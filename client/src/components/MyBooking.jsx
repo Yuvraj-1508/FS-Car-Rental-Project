@@ -54,18 +54,22 @@ const BookingOrder = () => {
         }
     };
 
-    const handleDeleteBooking = async (id) => {
+    const handleCancelBooking = async (id) => {
         if (!window.confirm("Are you sure you want to cancel this booking?")) return;
         try {
-            const res = await axios.delete(`${base_url}/api/delete/booking/${id}`, {
-                headers: { Authorization: `${localStorage.getItem("Authorization")}` },
-            });
+            const token = localStorage.getItem("Authorization");
+            const res = await axios.put(`${base_url}/api/all/booking/${id}`, 
+                { status: "cancelled" },
+                { headers: { Authorization: token } }
+            );
             if (res.data.success) {
                 toast.success("Booking cancelled successfully");
-                setBookings((prev) => prev.filter((b) => b._id !== id));
+                setBookings((prev) => 
+                    prev.map((b) => b._id === id ? { ...b, status: "cancelled" } : b)
+                );
             }
         } catch (err) {
-            console.error("Error deleting booking:", err);
+            console.error("Error cancelling booking:", err);
             toast.error("Failed to cancel booking");
         }
     };
@@ -208,13 +212,14 @@ const BookingOrder = () => {
                                     </div>
 
                                     <div className="flex items-center gap-3 mt-8 lg:mt-0 w-full lg:w-auto justify-end">
-                                        {booking.status === 'pending' && (
+                                        {(booking.status === 'pending' || booking.status === 'confirmed') && (
                                             <button
-                                                onClick={() => handleDeleteBooking(booking._id)}
-                                                className="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all active:scale-90"
+                                                onClick={() => handleCancelBooking(booking._id)}
+                                                className="flex items-center gap-2 px-6 py-4 bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-600 hover:text-white rounded-[14px] font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 group/cancel"
                                                 title="Cancel Booking"
                                             >
-                                                <FaTrashAlt size={16} />
+                                                <FaTimesCircle className="group-hover/cancel:rotate-90 transition-transform" size={14} /> 
+                                                <span>Cancel Booking</span>
                                             </button>
                                         )}
                                         <button
