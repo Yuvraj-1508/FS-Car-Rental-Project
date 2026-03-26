@@ -142,6 +142,7 @@ const HeroSection = ({ stats }) => {
                             </label>
                             <input
                                 type="date"
+                                min={new Date().toISOString().split('T')[0]}
                                 className="bg-transparent border-none outline-none w-full font-bold text-slate-900 dark:text-white cursor-pointer [color-scheme:light] dark:[color-scheme:dark] text-sm md:text-base"
                                 value={pickupDate}
                                 onChange={(e) => setPickupDate(e.target.value)}
@@ -154,6 +155,7 @@ const HeroSection = ({ stats }) => {
                             </label>
                             <input
                                 type="date"
+                                min={pickupDate || new Date().toISOString().split('T')[0]}
                                 className="bg-transparent border-none outline-none w-full font-bold text-slate-900 dark:text-white cursor-pointer [color-scheme:light] dark:[color-scheme:dark] text-sm md:text-base"
                                 value={returnDate}
                                 onChange={(e) => setReturnDate(e.target.value)}
@@ -321,6 +323,16 @@ const HowItWorks = () => {
 
 const NewsLetter = ({ stats }) => {
     const [email, setEmail] = useState("");
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [randomContent, setRandomContent] = useState(null);
+    const [subscribedEmail, setSubscribedEmail] = useState("");
+
+    const rewards = [
+        { type: "Exclusive Offer", title: "20% Discount Unlocked", desc: "Your elite status has been recognized. Use code 'GOPREMIUM' for your next booking.", icon: <FaGem className="text-amber-500" /> },
+        { type: "Upcoming Alert", title: "New Fleet Arrival", desc: "5 New Lamborghini Aventadors are arriving next week. Be the first to pilot them.", icon: <FaRocket className="text-blue-500" /> },
+        { type: "Strategic Update", title: "Regional Expansion", desc: "We've deployed new hubs in Mumbai and Bangalore. Luxury is now closer to you.", icon: <FaMapMarkerAlt className="text-emerald-500" /> },
+        { type: "Member Reward", title: "Free Fuel Upgrade", desc: "Your subscription includes a one-time complimentary full-tank service.", icon: <FaCheckCircle className="text-rose-500" /> }
+    ];
 
     const handleSubscribe = async (e) => {
         e.preventDefault();
@@ -328,7 +340,10 @@ const NewsLetter = ({ stats }) => {
             try {
                 const res = await axios.post(`${base_url}/new/visiter`, { email });
                 if (res.data.success) {
-                    toast.success("Subscribed successfully!");
+                    const random = rewards[Math.floor(Math.random() * rewards.length)];
+                    setRandomContent(random);
+                    setSubscribedEmail(email);
+                    setShowSuccess(true);
                     setEmail("");
                 } else {
                     toast.error(res.data.message || "Subscription failed");
@@ -412,6 +427,50 @@ const NewsLetter = ({ stats }) => {
                     </div>
                 </motion.div>
             </div>
+
+            {/* Success Reward Modal */}
+            <AnimatePresence>
+                {showSuccess && randomContent && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowSuccess(false)}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] p-10 shadow-2xl border border-slate-200 dark:border-slate-800 text-center"
+                        >
+                            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-950 rounded-[2rem] flex items-center justify-center text-4xl mx-auto mb-8 shadow-inner">
+                                {randomContent.icon}
+                            </div>
+                            
+                            <div className="space-y-4 mb-10">
+                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">{randomContent.type}</p>
+                                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">{randomContent.title}</h3>
+                                <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Subscription Verified For:</p>
+                                    <p className="text-sm font-black text-slate-900 dark:text-white mt-1">{subscribedEmail}</p>
+                                </div>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                                    {randomContent.desc}
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={() => setShowSuccess(false)}
+                                className="w-full py-5 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all shadow-xl shadow-blue-500/20"
+                            >
+                                Acknowledge Protocol
+                            </button>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </section>
     );
 };

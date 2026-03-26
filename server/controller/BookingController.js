@@ -1,5 +1,6 @@
 const BookingModel = require("../model/BookingModel");
 const CarModel = require("../model/CarModel");
+const ReviewModel = require("../model/ReviewModel");
 
 const newBooking = async (req, res) => {
     try {
@@ -113,7 +114,11 @@ const MyBooking = async (req, res) => {
             });
         }
 
-        // Convert carImage to data URI
+        // Fetch all reviews by this user to check which cars have been rated
+        const userReviews = await ReviewModel.find({ userId });
+        const reviewedCarIds = new Set(userReviews.map(r => r.carId.toString()));
+
+        // Convert carImage to data URI and add review status
         bookings = bookings.map((booking) => {
             const car = booking.carId.toObject();
 
@@ -125,6 +130,7 @@ const MyBooking = async (req, res) => {
 
             return {
                 ...booking.toObject(),
+                isCarReviewed: reviewedCarIds.has(car._id.toString()),
                 carId: {
                     ...car,
                     carImage: carImageData,

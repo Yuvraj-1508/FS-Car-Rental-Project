@@ -18,9 +18,7 @@ import AboutUs from './components/AboutUs';
 
 
 const App = () => {
-  useEffect(() => {
-    document.documentElement.classList.add("dark"); // force dark mode
-  }, []);
+
   useEffect(() => {
     AOS.init({
       duration: 1000, // animation duration

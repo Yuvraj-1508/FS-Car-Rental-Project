@@ -6,10 +6,16 @@ const postReview = async (req, res) => {
         const { carId, bookingId, rating, comment } = req.body;
         const userId = req.user.id;
 
-        // Check if review already exists for this booking
-        const existingReview = await ReviewModel.findOne({ bookingId });
-        if (existingReview) {
-            return res.status(400).json({ success: false, message: "Review already submitted for this booking" });
+        // Check if review already exists for this car by this user
+        const existingCarReview = await ReviewModel.findOne({ carId, userId });
+        if (existingCarReview) {
+            return res.status(400).json({ success: false, message: "You have already shared your experience for this vehicle." });
+        }
+
+        // Check if review already exists for this booking (extra safety)
+        const existingBookingReview = await ReviewModel.findOne({ bookingId });
+        if (existingBookingReview) {
+            return res.status(400).json({ success: false, message: "Review already submitted for this mission." });
         }
 
         const review = await ReviewModel.create({

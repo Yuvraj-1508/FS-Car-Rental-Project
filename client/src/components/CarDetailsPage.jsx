@@ -64,7 +64,6 @@ const BookCar = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-12 lg:py-24">
-            {/* Header & Status */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -106,7 +105,6 @@ const BookCar = () => {
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-                {/* Left: Visual Appreciation & Specs */}
                 <div className="lg:col-span-8 space-y-12">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -121,7 +119,6 @@ const BookCar = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-white/10 via-transparent to-transparent opacity-60 pointer-events-none"></div>
                     </motion.div>
 
-                    {/* Specification Grid */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <SpecCard icon={<FaChair />} label="Capacity" value={`${car.carSeats} Persons`} />
                         <SpecCard icon={<FaGasPump />} label="Energy" value={car.carFuel} />
@@ -129,7 +126,6 @@ const BookCar = () => {
                         <SpecCard icon={<FaShieldAlt />} label="Protection" value="Premium Insured" />
                     </div>
 
-                    {/* Description/About */}
                     <div className="p-10 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] relative overflow-hidden transition-colors duration-300">
                         <div className="absolute top-0 right-0 p-8 opacity-[0.03] dark:opacity-[0.02] text-slate-900 dark:text-white">
                             <FaStar size={160} />
@@ -146,11 +142,9 @@ const BookCar = () => {
                         </p>
                     </div>
 
-                    {/* Review Section */}
                     <ReviewSection carId={car._id} />
                 </div>
 
-                {/* Right: Booking Interface */}
                 <div className="lg:col-span-4 lg:sticky lg:top-32">
                     <BookingForm car={car} />
                 </div>
@@ -248,39 +242,52 @@ const BookingForm = ({ car }) => {
     const [cvv, setCvv] = useState("");
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState(1);
+    const [existingBookings, setExistingBookings] = useState([]);
+    const [isOverlapping, setIsOverlapping] = useState(false);
     const navigate = useNavigate();
 
-    const [hasBooked, setHasBooked] = useState(false);
-    const [checkingStatus, setCheckingStatus] = useState(true);
-
+    // Fetch existing bookings to check for overlap
     useEffect(() => {
-        const checkBookingStatus = async () => {
-            const token = localStorage.getItem("Authorization");
-            if (!token) {
-                setCheckingStatus(false);
-                return;
-            }
-
+        const fetchBookings = async () => {
             try {
-                const res = await axios.get(`${base_url}/api/myBooking`, {
-                    headers: { Authorization: token }
+                const res = await axios.get(`${base_url}/api/all/booking`, {
+                    headers: { Authorization: localStorage.getItem("Authorization") }
                 });
-
-                if (res.data.success && res.data.result) {
-                    const alreadyBooked = res.data.result.some(
-                        (b) => b.carId._id === car._id && (b.status === "pending" || b.status === "confirmed")
+                if (res.data.success) {
+                    const carBookings = res.data.bookings.filter(
+                        (b) => b.carId._id === car._id && (b.status === "confirmed" || b.status === "pending")
                     );
-                    setHasBooked(alreadyBooked);
+                    setExistingBookings(carBookings);
                 }
-            } catch (error) {
-                console.error("Booking check error:", error);
-            } finally {
-                setCheckingStatus(false);
+            } catch (err) {
+                console.error("Failed to fetch fleet schedule");
             }
         };
-
-        checkBookingStatus();
+        if (car?._id) fetchBookings();
     }, [car._id]);
+
+    // Dynamic overlap detection
+    useEffect(() => {
+        if (!fromDate || !toDate) {
+            setIsOverlapping(false);
+            return;
+        }
+
+        // The inputs provide YYYY-MM-DD. We compare them directly as strings with the server dates
+        // to avoid timezone/DST shifts that new Date() can introduce.
+        const startStr = fromDate;
+        const endStr = toDate;
+
+        const overlap = existingBookings.some((b) => {
+            const bStartStr = b.fromDate.split('T')[0];
+            const bEndStr = b.toDate.split('T')[0];
+            
+            // Standard overlap logic: (StartA <= EndB) and (EndA >= StartB)
+            return startStr <= bEndStr && endStr >= bStartStr;
+        });
+
+        setIsOverlapping(overlap);
+    }, [fromDate, toDate, existingBookings]);
 
     const calculateTotal = () => {
         if (!fromDate || !toDate) return 0;
@@ -294,303 +301,144 @@ const BookingForm = ({ car }) => {
     const handleNextToPayment = () => {
         if (!fromDate || !toDate) return toast.error("Deployment window required");
         if (new Date(toDate) < new Date(fromDate)) return toast.error("Timeline paradox: return before pickup");
+        if (isOverlapping) return; // Logic handled in render
         setStep(2);
     };
 
     const formatCardNumber = (value) => {
         const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-        const matches = v.match(/\d{4,16}/g);
-        const match = matches && matches[0] || '';
         const parts = [];
-
-        for (let i = 0, len = match.length; i < len; i += 4) {
-            parts.push(match.substring(i, i + 4));
+        for (let i = 0; i < v.length; i += 4) {
+            parts.push(v.substring(i, i + 4));
         }
-
-        if (parts.length) {
-            return parts.join(' ');
-        } else {
-            return v;
-        }
+        return parts.join(' ').substring(0, 19);
     };
 
-    const formatExpiry = (value) => {
-        const v = value.replace(/[^0-9]/gi, '').substring(0, 4);
-        if (v.length >= 2) {
-            return `${v.substring(0, 2)}/${v.substring(2, 4)}`;
-        }
-        return v;
-    };
     const handleBooking = async () => {
-        if (!cardNumber || !expiry || !cvv) {
-            return toast.error("Card credentials required for decryption");
-        }
-
+        if (!cardNumber || !expiry || !cvv) return toast.error("Card credentials required");
         const token = localStorage.getItem("Authorization");
-        if (!token) {
-            toast.error("Unauthenticated. Please login.");
-            return;
-        }
-
+        if (!token) return toast.error("Session expired. Please login.");
+        
         setLoading(true);
-
         try {
-            // 1. Create the Booking
-            const bookingRes = await axios.post(
-                `${base_url}/api/new/booking`,
+            const bookingRes = await axios.post(`${base_url}/api/new/booking`, 
                 { carId: car._id, fromDate, toDate, status: "confirmed" },
                 { headers: { Authorization: token } }
             );
 
             if (bookingRes.data.success) {
-                const newBookingId = bookingRes.data.booking._id;
                 const totalAmount = calculateTotal();
+                await axios.post(`${base_url}/api/process/payment`, {
+                    bookingId: bookingRes.data.booking._id,
+                    cardNumber: cardNumber.replace(/\s/g, ''),
+                    expDate: expiry,
+                    cvv: cvv,
+                    amount: totalAmount
+                }, { headers: { Authorization: token } });
 
-                // 2. Process and Save the Payment
-                const paymentRes = await axios.post(
-                    `${base_url}/api/process/payment`,
-                    {
-                        bookingId: newBookingId,
-                        cardNumber: cardNumber.replace(/\s/g, ''),
-                        expDate: expiry,
-                        cvv: cvv,
-                        amount: totalAmount
-                    },
-                    { headers: { Authorization: token } }
-                );
-
-                if (paymentRes.data.success) {
-                    setStep(3);
-                    toast.success("Transaction Secured");
-                    setTimeout(() => navigate("/bookings"), 2500);
-                } else {
-                    toast.error("Payment sync failed");
-                    setStep(1);
-                }
+                setStep(3);
+                toast.success("Transaction Secured");
+                setTimeout(() => navigate("/bookings"), 2500);
             } else {
                 toast.error(bookingRes.data.message);
                 setStep(1);
             }
         } catch (error) {
-            console.error("Deployment failed:", error);
-            toast.error(error.response?.data?.message || "Deployment failed. Retry.");
+            toast.error(error.response?.data?.message || "Deployment failed");
             setStep(1);
         } finally {
             setLoading(false);
         }
     };
 
-    if (checkingStatus) {
-        return (
-            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden flex justify-center items-center min-h-[400px] transition-colors duration-300">
-                <div className="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-            </div>
-        );
-    }
-
-    if (hasBooked) {
-        return (
-            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden flex flex-col items-center text-center justify-center min-h-[400px] transition-colors duration-300">
-                <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/40 rounded-full flex items-center justify-center text-blue-600 mb-6">
-                    <FaCheckCircle size={36} />
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2 transition-colors duration-300">Already Booked</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-bold text-sm tracking-wide leading-relaxed max-w-[250px] mb-8 transition-colors duration-300">
-                    You already have an active reservation for this specific vehicle in your fleet.
-                </p>
-                <button
-                    onClick={() => navigate('/bookings')}
-                    className="w-full py-5 bg-blue-600 hover:bg-slate-950 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] transition-all shadow-xl shadow-blue-500/20 active:scale-95"
-                >
-                    Manage Bookings
-                </button>
-            </div>
-        );
-    }
-
     return (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden transition-colors duration-300">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 dark:bg-blue-900/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
 
             <AnimatePresence mode="wait">
-                {step === 1 && (
+                {isOverlapping ? (
                     <motion.div
-                        key="step1"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="space-y-8"
+                        key="overlap"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="py-10 flex flex-col items-center text-center"
                     >
+                        <div className="w-20 h-20 bg-rose-50 dark:bg-rose-900/20 rounded-full flex items-center justify-center text-rose-500 mb-6">
+                            <FaInfoCircle size={36} />
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2">Already Booked</h3>
+                        <p className="text-slate-500 dark:text-slate-400 font-bold text-sm tracking-wide leading-relaxed max-w-[250px] mb-8">
+                            This vehicle is reserved for the selected timeline. Please adjust your dates.
+                        </p>
+                        <button onClick={() => { setFromDate(""); setToDate(""); }} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95">Reset Timeline</button>
+                    </motion.div>
+                ) : step === 1 && (
+                    <motion.div key="1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                         <div>
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2 flex items-center gap-3 transition-colors duration-300">
-                                <FaCalendarAlt className="text-blue-600" />
-                                Reservation
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2 flex items-center gap-3">
+                                <FaCalendarAlt className="text-blue-600" /> Reservation
                             </h3>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Select your deployment window</p>
                         </div>
-
                         <div className="space-y-4">
                             <div className="group">
                                 <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 group-focus-within:text-blue-600 transition-colors">Capture Date</label>
-                                <input
-                                    type="date"
-                                    value={fromDate}
-                                    onChange={(e) => setFromDate(e.target.value)}
-                                    min={new Date().toISOString().split("T")[0]}
-                                    className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 focus:border-blue-400/50 dark:focus:border-blue-500/50 focus:ring-4 focus:ring-blue-400/5 transition-all outline-none text-slate-800 dark:text-white font-bold [color-scheme:light] dark:[color-scheme:dark]"
-                                />
+                                <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} min={new Date().toISOString().split("T")[0]} className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold outline-none [color-scheme:light] dark:[color-scheme:dark]" />
                             </div>
-
                             <div className="group">
                                 <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 group-focus-within:text-blue-600 transition-colors">Return Date</label>
-                                <input
-                                    type="date"
-                                    value={toDate}
-                                    onChange={(e) => setToDate(e.target.value)}
-                                    min={fromDate || new Date().toISOString().split("T")[0]}
-                                    className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 focus:border-blue-400/50 dark:focus:border-blue-500/50 focus:ring-4 focus:ring-blue-400/5 transition-all outline-none text-slate-800 dark:text-white font-bold [color-scheme:light] dark:[color-scheme:dark]"
-                                />
+                                <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} min={fromDate || new Date().toISOString().split("T")[0]} className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold outline-none [color-scheme:light] dark:[color-scheme:dark]" />
                             </div>
                         </div>
-
                         <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                             <div className="flex justify-between items-end mb-8">
                                 <div>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 leading-none">Total Investment</p>
-                                    <p className="text-3xl font-black text-blue-600 tracking-tighter">
-                                        ₹{calculateTotal().toLocaleString('en-IN')}
-                                    </p>
+                                    <p className="text-3xl font-black text-blue-600 tracking-tighter">₹{calculateTotal().toLocaleString('en-IN')}</p>
                                 </div>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic opacity-50">Incl. VAT & Insurance</p>
                             </div>
-                            <button
-                                onClick={handleNextToPayment}
-                                className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3 group active:scale-[0.98]"
-                            >
-                                Secure Deployment <FaChevronRight className="group-hover:translate-x-1 transition-transform" />
+                            <button onClick={handleNextToPayment} className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3">
+                                Secure Deployment <FaChevronRight />
                             </button>
                         </div>
                     </motion.div>
                 )}
 
                 {step === 2 && (
-                    <motion.div
-                        key="step2"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="space-y-8"
-                    >
+                    <motion.div key="2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-3 transition-colors duration-300">
-                                <FaCreditCard className="text-emerald-600" />
-                                Payment
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-3">
+                                <FaCreditCard className="text-emerald-600" /> Payment
                             </h3>
-                            <button onClick={() => setStep(1)} className="text-[10px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest underline decoration-2 underline-offset-4 decoration-blue-600">Amend Dates</button>
+                            <button onClick={() => setStep(1)} className="text-[10px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest underline underline-offset-4">Amend Dates</button>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="p-5 rounded-3xl border-2 border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/10 flex flex-col items-center gap-3 cursor-pointer group hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
-                                <FaCreditCard className="text-3xl text-emerald-600 dark:text-emerald-500 group-hover:scale-110 transition-transform" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-500">Secured Card</span>
-                            </div>
-                            {/* <div className="p-5 rounded-3xl border-2 border-slate-100 bg-slate-50 flex flex-col items-center gap-3 opacity-30 cursor-not-allowed grayscale">
-                                <FaPaypal className="text-3xl text-slate-300" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Global UPI</span>
-                            </div> */}
-                        </div>
-
                         <div className="space-y-4">
                             <div className="group">
-                                <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 group-focus-within:text-emerald-600 transition-colors">Card Signature</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        maxLength="19"
-                                        placeholder="XXXX XXXX XXXX XXXX"
-                                        value={cardNumber}
-                                        onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                                        className="w-full p-4 pl-12 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold focus:border-emerald-400/50 dark:focus:border-emerald-500/50 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                                    />
-                                    <FaLock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
-                                </div>
+                                <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Card Signature</label>
+                                <input type="text" maxLength="19" placeholder="XXXX XXXX XXXX XXXX" value={cardNumber} onChange={(e) => setCardNumber(formatCardNumber(e.target.value))} className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold outline-none" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="group">
-                                    <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 group-focus-within:text-emerald-600">Exp.</label>
-                                    <input
-                                        type="text"
-                                        maxLength="5"
-                                        placeholder="MM/YY"
-                                        value={expiry}
-                                        onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                                        className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold focus:border-emerald-400/50 dark:focus:border-emerald-500/50 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                                    />
-                                </div>
-                                <div className="group">
-                                    <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 group-focus-within:text-emerald-600">CVV</label>
-                                    <div className="relative">
-                                        <input
-                                            type="password"
-                                            maxLength="3"
-                                            placeholder="•••"
-                                            value={cvv}
-                                            onChange={(e) => setCvv(e.target.value.replace(/[^0-9]/g, ''))}
-                                            className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold focus:border-emerald-400/50 dark:focus:border-emerald-500/50 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all tracking-[0.3em] font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                                        />
-                                    </div>
-                                </div>
+                                <input type="text" maxLength="5" placeholder="MM/YY" value={expiry} onChange={(e) => setExpiry(e.target.value)} className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold outline-none" />
+                                <input type="password" maxLength="3" placeholder="•••" value={cvv} onChange={(e) => setCvv(e.target.value.replace(/[^0-9]/g, ''))} className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold outline-none tracking-widest" />
                             </div>
                         </div>
-
-                        <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 mb-8">
-                                <FaLock className="text-emerald-600/50" size={12} />
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">AES-256 Bit Encryption Protocol Active</p>
-                            </div>
-                            <button
-                                onClick={handleBooking}
-                                disabled={loading}
-                                className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl transition-all active:scale-[0.98] ${loading
-                                    ? 'bg-slate-200 text-slate-400 cursor-wait'
-                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
-                                    }`}
-                            >
-                                {loading ? (
-                                    <span className="flex items-center justify-center gap-3">
-                                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                        Processing Transaction
-                                    </span>
-                                ) : (
-                                    <>Finalize ₹{calculateTotal().toLocaleString('en-IN')}</>
-                                )}
-                            </button>
-                        </div>
+                        <button onClick={handleBooking} disabled={loading} className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] transition-all">
+                            {loading ? "Processing..." : `Finalize ₹${calculateTotal().toLocaleString('en-IN')}`}
+                        </button>
                     </motion.div>
                 )}
 
                 {step === 3 && (
-                    <motion.div
-                        key="step3"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="py-12 flex flex-col items-center text-center"
-                    >
-                        <div className="w-24 h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-8 shadow-sm border border-emerald-100">
+                    <motion.div key="3" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="py-12 flex flex-col items-center text-center">
+                        <div className="w-24 h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-8 border border-emerald-100">
                             <FaCheckCircle size={48} />
                         </div>
                         <h3 className="text-2xl font-black text-slate-900 uppercase tracking-widest mb-2">Asset Secured</h3>
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-loose">
-                            Transaction successfully synchronized.<br />
-                            Retrieving your digital access keys...
-                        </p>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Transaction successfully synchronized.</p>
                         <div className="mt-10 w-full h-1 bg-slate-50 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: "100%" }}
-                                transition={{ duration: 2.5 }}
-                                className="h-full bg-emerald-500"
-                            />
+                            <motion.div initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 2.5 }} className="h-full bg-emerald-500" />
                         </div>
                     </motion.div>
                 )}

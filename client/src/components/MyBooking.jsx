@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Layout from "./layout/Layout";
-import { FaCalendarAlt, FaMapMarkerAlt, FaCar, FaClock, FaCheckCircle, FaTimesCircle, FaTrashAlt, FaGasPump, FaCogs, FaChevronRight } from "react-icons/fa";
+import { FaCalendarAlt, FaMapMarkerAlt, FaCar, FaClock, FaCheckCircle, FaTimesCircle, FaTrashAlt, FaGasPump, FaCogs, FaChevronRight, FaStar } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
@@ -284,7 +284,7 @@ const BookingOrder = () => {
                                     </div>
 
                                     <div className="flex flex-wrap items-center gap-3 mt-8 lg:mt-0 w-full lg:w-auto justify-end">
-                                        {activeTab === 'history' && (
+                                        {activeTab === 'history' && !booking.isCarReviewed && (
                                             <button
                                                 onClick={() => { setReviewingBooking(booking); setShowReviewModal(true); }}
                                                 className="flex items-center gap-2 px-6 py-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 hover:bg-amber-600 hover:text-white rounded-[14px] font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 group/review"

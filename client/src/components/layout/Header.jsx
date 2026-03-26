@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaHome, FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaUserCircle, FaSignOutAlt, FaUserShield, FaTimes, FaGoogle, FaArrowRight } from "react-icons/fa";
-import { MdOutlineBookmarkAdded, MdLogin, MdClose, MdDashboard, MdDarkMode, MdLightMode } from "react-icons/md";
+import { MdOutlineBookmarkAdded, MdLogin, MdClose, MdDashboard } from "react-icons/md";
 import toast from "react-hot-toast";
 import axios from "axios";
 import Loader from "../Loader";
@@ -27,19 +27,9 @@ const Header = () => {
     const [search, setSearch] = useState("");
     const [sbookings, setSBookings] = useState([]);
     const [scrolled, setScrolled] = useState(false);
-    const [darkMode, setDarkMode] = useState(
-        localStorage.getItem("theme") === "dark" || (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)
-    );
 
-    useEffect(() => {
-        if (darkMode) {
-            document.documentElement.classList.add("dark");
-            localStorage.setItem("theme", "dark");
-        } else {
-            document.documentElement.classList.remove("dark");
-            localStorage.setItem("theme", "light");
-        }
-    }, [darkMode]);
+
+
 
     useEffect(() => {
         const handleScroll = () => {
@@ -191,13 +181,7 @@ const Header = () => {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 md:gap-4">
-                        <button
-                            onClick={() => setDarkMode(!darkMode)}
-                            className="p-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
-                            title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                        >
-                            {darkMode ? <MdLightMode size={20} /> : <MdDarkMode size={20} />}
-                        </button>
+
                         <button
                             onClick={() => setIsSearchOpen(true)}
                             className="p-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"
