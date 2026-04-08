@@ -15,6 +15,9 @@ import AdminCars from './components/Admin/components/AdminCars';
 import Visiter from './components/Admin/components/Visiter';
 import Payments from './components/Admin/components/Payments';
 import AboutUs from './components/AboutUs';
+import HelpCenter from './components/HelpCenter';
+import TermsOfService from './components/TermsOfService';
+import PrivacyPolicy from './components/PrivacyPolicy';
 
 
 const App = () => {
@@ -37,6 +40,9 @@ const App = () => {
         <Route path='/bookings' element={<MyBooking />} />
         <Route path='/car/:id' element={<CarDetailsPage />} />
         <Route path='/about' element={<AboutUs />} />
+        <Route path='/help' element={<HelpCenter />} />
+        <Route path='/terms' element={<TermsOfService />} />
+        <Route path='/privacy' element={<PrivacyPolicy />} />
         <Route
           path="/admin"
           element={<AdminPage />}

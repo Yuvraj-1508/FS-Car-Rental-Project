@@ -8,6 +8,8 @@ const UserRoutes = require("./routes/UserRoutes");
 const CarRoutes = require("./routes/CarRoutes");
 const BookingRoutes = require("./routes/BookingRoutes");
 const visiterModel = require("./model/visiter.model");
+const CarModel = require("./model/CarModel");
+const UserModel = require("./model/UserModel");
 
 const DB_URL = process.env.DB_URL || "mongodb://localhost:27017/carRental"
 connectDB(DB_URL);
@@ -41,6 +43,30 @@ app.use("/api", BookingRoutes)
 app.use("/api", require("./routes/PaymentRoutes"));
 app.use("/api", require("./routes/ReviewRoutes"));
 app.use("/api", require("./routes/WishlistRoutes"));
+
+// stats for about us
+app.get("/api/stats", async (req, res) => {
+    try {
+        const carCount = await CarModel.countDocuments();
+        const userCount = await UserModel.countDocuments();
+        const uniqueCities = await CarModel.distinct("location");
+        
+        res.status(200).json({
+            success: true,
+            cars: carCount,
+            users: userCount,
+            citiesCount: uniqueCities.length > 0 ? uniqueCities.length : 12,
+            cities: uniqueCities.length > 0 ? uniqueCities : [
+                "Mumbai", "Delhi", "Bengaluru", "Pune", 
+                "Hyderabad", "Ahmedabad", "Chennai", "Kolkata",
+                "Jaipur", "Chandigarh", "Goa", "Kochi"
+            ],
+            rating: 4.9
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
 
 //visiter
 app.post("/new/visiter", async (req, res) => {

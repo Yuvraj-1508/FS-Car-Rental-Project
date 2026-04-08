@@ -93,11 +93,11 @@ const Dashboard = () => {
         className="mb-10 flex justify-between items-end"
       >
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Fleet Command</h1>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Overview</h1>
           <p className="text-slate-400 mt-2 font-bold uppercase text-[10px] tracking-[0.3em]">Operational Oversight & Logistics</p>
         </div>
         <div className="hidden md:block">
-           <button onClick={fetchDashboardData} className="px-6 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all">Refresh Sync</button>
+           <button onClick={fetchDashboardData} className="px-6 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all">Refresh</button>
         </div>
       </motion.div>
 
@@ -167,7 +167,7 @@ const Dashboard = () => {
           className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-white flex flex-col justify-between"
         >
           <div>
-             <h2 className="text-xl font-black uppercase tracking-tight mb-2">Fleet Pulse</h2>
+             <h2 className="text-xl font-black uppercase tracking-tight mb-2">Car Pulse</h2>
              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Platform Health Status</p>
              <div className="mt-8 space-y-6">
                 <div>

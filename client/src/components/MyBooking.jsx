@@ -168,9 +168,7 @@ const BookingOrder = () => {
                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
                     My <span className="text-blue-600">Bookings</span>
                 </h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-4 font-medium uppercase text-[10px] tracking-[0.3em]">
-                    Fleet Command & Logistics
-                </p>
+               
             </motion.div>
 
             {/* Navigation Tabs */}
@@ -183,7 +181,7 @@ const BookingOrder = () => {
                             : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                             }`}
                     >
-                        Active Fleet
+                        Active Car
                     </button>
                     <button
                         onClick={() => setActiveTab("history")}
@@ -192,7 +190,7 @@ const BookingOrder = () => {
                             : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                             }`}
                     >
-                        Mission History
+                        Booking History
                     </button>
                 </div>
             </div>
