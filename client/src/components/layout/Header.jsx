@@ -84,7 +84,7 @@ const Header = () => {
                 setWelcomeName(res.data.name);
                 const roleNum = parseInt(res.data.role);
                 setRole(roleNum);
-                const targetPath = roleNum === 1 ? "/admin" : (pendingRedirect || "/");
+                const targetPath = pendingRedirect || "/";
                 setPendingRedirect(null);
                 navigate(targetPath);
             } else {
@@ -116,7 +116,7 @@ const Header = () => {
                     setWelcomeName(res.data.name);
                     const roleNum = parseInt(res.data.role);
                     setRole(roleNum);
-                    const targetPath = roleNum === 1 ? "/admin" : (pendingRedirect || "/");
+                    const targetPath = pendingRedirect || "/";
                     setPendingRedirect(null);
                     navigate(targetPath);
                 }

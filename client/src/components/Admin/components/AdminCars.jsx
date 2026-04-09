@@ -435,31 +435,55 @@ const CarForm = ({ onSubmit, onClose, defaultValues = {}, isEdit = false }) => {
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 mb-2 block group-focus-within:text-blue-600 transition-colors">
             {isEdit ? "Asset Image Override" : "Register Fleet Image"}
           </label>
-          <div className="relative border-2 border-dashed border-slate-200 rounded-3xl p-4 transition-all group-hover:border-blue-500/50 bg-slate-50 overflow-hidden min-h-[140px] flex items-center justify-center">
+          
+          {/* Always show the Upload Zone */}
+          <div className="relative border-2 border-dashed border-slate-200 rounded-3xl p-8 transition-all group-hover:border-blue-500 bg-slate-50 flex flex-col items-center justify-center overflow-hidden">
             <input
               type="file"
               className="absolute inset-0 opacity-0 cursor-pointer z-10"
               {...register("carImage", { required: !isEdit })}
             />
-
-            {filePreview ? (
-              <div className="relative w-full h-full p-2 flex flex-col items-center">
-                <img src={filePreview} className="h-16 w-16 object-cover rounded-xl border border-blue-500/30 mb-2" alt="preview" />
-                <span className="text-[9px] font-black text-blue-600 uppercase">New Asset Ready</span>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center p-4">
-                <FaCloudUploadAlt size={30} className="text-slate-300 mb-2 group-hover:text-blue-500 transition-colors" />
-                <span className="text-[9px] font-black uppercase text-slate-400">
-                  {isEdit ? "Update File" : "Deploy File"}
-                </span>
-              </div>
-            )}
+            <FaCloudUploadAlt size={48} className="text-blue-500 mb-4" />
+            <span className="text-xs font-black uppercase text-slate-500 tracking-widest">
+              {isEdit ? "Update File" : "Deploy File"}
+            </span>
+            <p className="text-[9px] font-bold text-slate-400 mt-2">Maximum file size: 5MB</p>
           </div>
+
+          {/* Show Preview Pill below if a NEW image is selected */}
+          {filePreview && (
+            <motion.div 
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               className="mt-4 flex items-center justify-between gap-3 px-6 py-4 bg-blue-50/50 rounded-2xl border border-blue-100 shadow-sm"
+            >
+              <div className="flex items-center gap-3">
+                <img src={filePreview} className="w-10 h-10 rounded-xl object-cover border border-blue-200" alt="new preview" />
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                  Ready: <span className="text-blue-600 italic ml-1">New Asset Selected</span>
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={(e) => {
+                  setFilePreview(null);
+                  reset({ ...watch(), carImage: null });
+                }}
+                className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                title="Remove selection"
+              >
+                <FaTimes size={14} />
+              </button>
+            </motion.div>
+          )}
+
+          {/* Show Current Asset Pill if editing and NO new image selected */}
           {isEdit && !filePreview && defaultValues.carImage && (
-            <div className="mt-4 flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <img src={defaultValues.carImage} className="w-8 h-8 rounded-lg object-cover opacity-50" alt="current" />
-              <p className="text-[9px] font-bold text-slate-400 uppercase">Protected: <span className="text-blue-600/80 italic">Using Saved Asset</span></p>
+            <div className="mt-4 flex items-center gap-3 px-6 py-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+              <img src={defaultValues.carImage} className="w-10 h-10 rounded-xl object-cover opacity-60 grayscale-[50%]" alt="current" />
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                Protected: <span className="text-blue-600/80 italic ml-1 underline underline-offset-4">Using Saved Asset</span>
+              </p>
             </div>
           )}
         </div>

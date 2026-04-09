@@ -1,13 +1,13 @@
 import React from "react";
 import Layout from "./layout/Layout";
 import { motion } from "framer-motion";
-import { 
-  FaSearch, 
-  FaQuestionCircle, 
-  FaBook, 
-  FaMoneyCheckAlt, 
-  FaShieldAlt, 
-  FaCar, 
+import {
+  FaSearch,
+  FaQuestionCircle,
+  FaBook,
+  FaMoneyCheckAlt,
+  FaShieldAlt,
+  FaCar,
   FaUserAlt,
   FaHeadset,
   FaEnvelope,
@@ -37,23 +37,23 @@ const HelpCenter = () => {
       {/* Hero Section */}
       <section className="bg-black pt-32 pb-20 px-6 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600 rounded-full blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600 rounded-full blur-[120px]" />
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600 rounded-full blur-[120px]" />
         </div>
-        
+
         <div className="container mx-auto text-center relative z-10">
-          <motion.h1 
+          <motion.h1
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tight"
           >
             How can we <span className="text-blue-500">help you</span> today?
           </motion.h1>
-          
+
           <div className="max-w-2xl mx-auto relative group">
             <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search for articles, guides, and more..."
               className="w-full pl-16 pr-6 py-5 bg-white/5 border border-white/10 rounded-2xl text-white outline-none focus:bg-white/10 focus:border-blue-500/50 transition-all text-lg backdrop-blur-sm"
             />
@@ -98,12 +98,8 @@ const HelpCenter = () => {
                 </div>
               ))}
             </div>
-            
-            <div className="mt-16 text-center">
-                <button className="px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white transition-all transform active:scale-95">
-                    View All FAQs
-                </button>
-            </div>
+
+
           </div>
         </div>
       </section>
@@ -111,29 +107,29 @@ const HelpCenter = () => {
       {/* Support Contact Section */}
       <section className="py-24 bg-white dark:bg-slate-950">
         <div className="container mx-auto px-6 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">Still need help?</h2>
-            <p className="text-slate-500 dark:text-slate-400 mb-12 max-w-xl mx-auto">Our support team is available 24/7 to assist you with any questions or issues.</p>
-            
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                <div className="p-8 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-3xl group hover:border-blue-500/50 transition-all">
-                    <FaHeadset className="text-3xl text-blue-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                    <h4 className="font-bold text-slate-900 dark:text-white mb-2">Live Chat</h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Avg. response: 2 mins</p>
-                    <button className="text-blue-600 font-bold hover:underline">Start Chat</button>
-                </div>
-                <div className="p-8 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 rounded-3xl group hover:border-emerald-500/50 transition-all">
-                    <FaPhoneAlt className="text-3xl text-emerald-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                    <h4 className="font-bold text-slate-900 dark:text-white mb-2">Call Us</h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Available 24/7</p>
-                    <button className="text-emerald-600 font-bold hover:underline">+1 800 123 456</button>
-                </div>
-                <div className="p-8 bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/20 rounded-3xl group hover:border-purple-500/50 transition-all">
-                    <FaEnvelope className="text-3xl text-purple-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                    <h4 className="font-bold text-slate-900 dark:text-white mb-2">Email Us</h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Response in 24 hrs</p>
-                    <button className="text-purple-600 font-bold hover:underline">Send Email</button>
-                </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">Still need help?</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-12 max-w-xl mx-auto">Our support team is available 24/7 to assist you with any questions or issues.</p>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="p-8 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-3xl group hover:border-blue-500/50 transition-all">
+              <FaHeadset className="text-3xl text-blue-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+              <h4 className="font-bold text-slate-900 dark:text-white mb-2">Live Chat</h4>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Avg. response: 2 mins</p>
+              <button className="text-blue-600 font-bold hover:underline">Start Chat</button>
             </div>
+            <div className="p-8 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 rounded-3xl group hover:border-emerald-500/50 transition-all">
+              <FaPhoneAlt className="text-3xl text-emerald-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+              <h4 className="font-bold text-slate-900 dark:text-white mb-2">Call Us</h4>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Available 24/7</p>
+              <button className="text-emerald-600 font-bold hover:underline">+1 800 123 456</button>
+            </div>
+            <div className="p-8 bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/20 rounded-3xl group hover:border-purple-500/50 transition-all">
+              <FaEnvelope className="text-3xl text-purple-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+              <h4 className="font-bold text-slate-900 dark:text-white mb-2">Email Us</h4>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Response in 24 hrs</p>
+              <button className="text-purple-600 font-bold hover:underline">Send Email</button>
+            </div>
+          </div>
         </div>
       </section>
     </Layout>

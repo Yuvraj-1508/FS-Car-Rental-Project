@@ -14,13 +14,7 @@ const Footer = () => {
           <p className="text-base opacity-80 leading-relaxed font-medium">
             Redefining the art of motion. Premium car rental services for those who command the extraordinary.
           </p>
-          <div className="flex space-x-4">
-            {[FaFacebookF, FaInstagram, FaTwitter, FaEnvelope].map((Icon, i) => (
-              <a key={i} href="#" className="w-10 h-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-center hover:text-blue-600 hover:border-blue-500 transition-all shadow-sm">
-                <Icon size={16} />
-              </a>
-            ))}
-          </div>
+
         </div>
 
         {/* Quick Links */}

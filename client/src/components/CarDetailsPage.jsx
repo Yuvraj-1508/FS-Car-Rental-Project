@@ -314,6 +314,12 @@ const BookingForm = ({ car }) => {
         return parts.join(' ').substring(0, 19);
     };
 
+    const formatExpiry = (value) => {
+        const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        if (v.length <= 2) return v;
+        return v.substring(0, 2) + '/' + v.substring(2, 4);
+    };
+
     const handleBooking = async () => {
         if (!cardNumber || !expiry || !cvv) return toast.error("Card credentials required");
         const token = localStorage.getItem("Authorization");
@@ -420,7 +426,7 @@ const BookingForm = ({ car }) => {
                                 <input type="text" maxLength="19" placeholder="XXXX XXXX XXXX XXXX" value={cardNumber} onChange={(e) => setCardNumber(formatCardNumber(e.target.value))} className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold outline-none" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <input type="text" maxLength="5" placeholder="MM/YY" value={expiry} onChange={(e) => setExpiry(e.target.value)} className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold outline-none" />
+                                <input type="text" maxLength="5" placeholder="MM/YY" value={expiry} onChange={(e) => setExpiry(formatExpiry(e.target.value))} className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold outline-none" />
                                 <input type="password" maxLength="3" placeholder="•••" value={cvv} onChange={(e) => setCvv(e.target.value.replace(/[^0-9]/g, ''))} className="w-full p-4 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-bold outline-none tracking-widest" />
                             </div>
                         </div>

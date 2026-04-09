@@ -9,6 +9,7 @@ const Sidebar = () => {
 
   const handleLogout = () => {
     localStorage.clear();
+    window.isExiting = true; // Bypass security lock
     window.location.replace("/");
   };
 
