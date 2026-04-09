@@ -129,7 +129,7 @@ const HeroSection = ({ stats }) => {
                             </label>
                             <input
                                 type="text"
-                                placeholder="City, Airport, or Address"
+                                placeholder="City"
                                 className="bg-transparent border-none outline-none w-full font-bold text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-700 text-sm md:text-base"
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
@@ -448,7 +448,7 @@ const NewsLetter = ({ stats }) => {
                             <div className="w-20 h-20 bg-slate-50 dark:bg-slate-950 rounded-[2rem] flex items-center justify-center text-4xl mx-auto mb-8 shadow-inner">
                                 {randomContent.icon}
                             </div>
-                            
+
                             <div className="space-y-4 mb-10">
                                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">{randomContent.type}</p>
                                 <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">{randomContent.title}</h3>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Layout from "./layout/Layout";
-import { FaCalendarAlt, FaMapMarkerAlt, FaCar, FaClock, FaCheckCircle, FaTimesCircle, FaTrashAlt, FaGasPump, FaCogs, FaChevronRight, FaStar } from "react-icons/fa";
+import { FaCalendarAlt, FaMapMarkerAlt, FaCar, FaClock, FaCheckCircle, FaTimesCircle, FaTrashAlt, FaGasPump, FaCogs, FaChevronRight, FaStar, FaCreditCard, FaLock } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
@@ -11,7 +11,91 @@ const base_url = import.meta.env.VITE_BASE_URL || "http://localhost:9000";
 const MyBooking = () => {
     return (
         <Layout>
-            <div className="bg-slate-50 dark:bg-slate-950 min-h-screen">
+            <style>{`
+                @media print {
+                    @page { margin: 0; size: auto; }
+                    html, body { 
+                        height: 100% !important; 
+                        max-height: 100% !important;
+                        overflow: hidden !important; 
+                        margin: 0 !important; 
+                        padding: 0 !important; 
+                        background: white !important; 
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    
+                    /* Aggressive hiding of any element NOT leading to the invoice */
+                    body > :not(#root),
+                    #root > :not(main),
+                    main > :not(.booking-list-area),
+                    .booking-list-area > :not(#booking-order-root),
+                    #booking-order-root > :not(#invoice-print-area) {
+                        display: none !important;
+                        height: 0 !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        overflow: hidden !important;
+                    }
+
+                    #invoice-print-area {
+                        display: block !important;
+                        position: fixed !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        background: white !important;
+                        z-index: 99999 !important;
+                    }
+                    
+                    .invoice-modal-wrapper {
+                        position: static !important;
+                        display: block !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        background: white !important;
+                    }
+                    
+                    .invoice-content { 
+                        display: block !important;
+                        width: 100% !important;
+                        max-width: none !important;
+                        height: auto !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        box-shadow: none !important;
+                        background: white !important;
+                        margin: 0 !important;
+                    }
+                    
+                    .invoice-content > .invoice-scroll-container { 
+                        max-height: none !important; 
+                        overflow: visible !important; 
+                        padding: 10mm !important; 
+                    }
+                    
+                    .dark .invoice-content { background: white !important; color: black !important; }
+                    .dark .invoice-content * { color: black !important; border-color: #eee !important; background-color: transparent !important; }
+
+                    /* Aggressive spacing reduction for 1-page guarantee */
+                    .invoice-content .space-y-10 { gap: 10px !important; }
+                    .invoice-content .space-y-8 { gap: 8px !important; }
+                    .invoice-content .p-10, .invoice-content .p-14 { padding: 5mm !important; }
+                    .invoice-content .pb-8, .invoice-content .pb-10 { padding-bottom: 2mm !important; }
+                    .invoice-content .pt-6, .invoice-content .pt-10 { padding-top: 2mm !important; }
+                    .invoice-content .mb-10, .invoice-content .mb-8 { margin-bottom: 2mm !important; }
+                    .invoice-content .mt-10 { margin-top: 2mm !important; }
+                    .invoice-content h1 { font-size: 20pt !important; margin-bottom: 0 !important; }
+                    .invoice-content p, .invoice-content span { font-size: 9pt !important; }
+                    .invoice-content .text-xl { font-size: 11pt !important; }
+                    .invoice-content .text-4xl { font-size: 18pt !important; }
+                    .invoice-content .w-16.h-12 { width: 40px !important; height: 30px !important; }
+                    .invoice-content table td, .invoice-content table th { padding: 2mm 4mm !important; }
+                    .invoice-content .rounded-[2rem], .invoice-content .rounded-[3rem] { border-radius: 1rem !important; }
+                }
+            `}</style>
+            <div className="bg-slate-50 dark:bg-slate-950 min-h-screen booking-list-area">
                 <BookingOrder />
             </div>
         </Layout>
@@ -37,6 +121,14 @@ const BookingOrder = () => {
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewComment, setReviewComment] = useState("");
     const [submittingReview, setSubmittingReview] = useState(false);
+
+    // Payment States
+    const [payingBooking, setPayingBooking] = useState(null);
+    const [showPayModal, setShowPayModal] = useState(false);
+    const [cardNumber, setCardNumber] = useState("");
+    const [expiry, setExpiry] = useState("");
+    const [cvv, setCvv] = useState("");
+    const [processingPayment, setProcessingPayment] = useState(false);
 
     const getBookings = async () => {
         const token = localStorage.getItem("Authorization");
@@ -71,6 +163,14 @@ const BookingOrder = () => {
         return end < today;
     };
 
+    const isCancellable = (fromDate) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = new Date(fromDate);
+        start.setHours(0, 0, 0, 0);
+        return today < start;
+    };
+
     const filterBookings = (list, tab) => {
         const filtered = list.filter((b) => {
             const finished = isFinished(b.toDate);
@@ -83,11 +183,16 @@ const BookingOrder = () => {
         filterBookings(allBookings, activeTab);
     }, [activeTab, allBookings]);
 
-    const handleCancelBooking = async (id) => {
+    const handleCancelBooking = async (id, fromDate) => {
+        if (!isCancellable(fromDate)) {
+            toast.error("Cancellation protocol closed. You cannot cancel on or after the pickup date.");
+            return;
+        }
+
         if (!window.confirm("Are you sure you want to cancel this booking?")) return;
         try {
             const token = localStorage.getItem("Authorization");
-            const res = await axios.put(`${base_url}/api/all/booking/${id}`, 
+            const res = await axios.put(`${base_url}/api/all/booking/${id}`,
                 { status: "cancelled" },
                 { headers: { Authorization: token } }
             );
@@ -120,6 +225,52 @@ const BookingOrder = () => {
         } finally {
             setSubmittingReview(false);
         }
+    };
+
+    const handleProcessPayNow = async () => {
+        if (!cardNumber || !expiry || !cvv) return toast.error("Card credentials required");
+        setProcessingPayment(true);
+        try {
+            const token = localStorage.getItem("Authorization");
+            const res = await axios.post(`${base_url}/api/process/payment`, {
+                bookingId: payingBooking._id,
+                cardNumber: cardNumber.replace(/\s/g, ''),
+                expDate: expiry,
+                cvv: cvv,
+                amount: payingBooking.TotalPay
+            }, { headers: { Authorization: token } });
+
+            if (res.data.success) {
+                await axios.put(`${base_url}/api/all/booking/${payingBooking._id}`,
+                    { status: "confirmed" },
+                    { headers: { Authorization: token } }
+                );
+
+                toast.success("Transaction Secured. Booking confirmed.");
+                setAllBookings(prev => prev.map(b => b._id === payingBooking._id ? { ...b, status: 'confirmed' } : b));
+                setShowPayModal(false);
+                setPayingBooking(null);
+            }
+        } catch (err) {
+            toast.error("Payment sync failed");
+        } finally {
+            setProcessingPayment(false);
+        }
+    };
+
+    const formatCardNumber = (value) => {
+        const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        const parts = [];
+        for (let i = 0; i < v.length; i += 4) {
+            parts.push(v.substring(i, i + 4));
+        }
+        return parts.join(' ').substring(0, 19);
+    };
+
+    const formatExpiry = (value) => {
+        const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        if (v.length <= 2) return v;
+        return v.substring(0, 2) + '/' + v.substring(2, 4);
     };
 
     useEffect(() => {
@@ -156,19 +307,20 @@ const BookingOrder = () => {
     );
 
     return (
-        <div className="py-16 px-6 max-w-5xl mx-auto">
+        <div id="booking-order-root">
+            {/* Wrapper for content to hide during print */}
+            <div className="py-16 px-6 max-w-5xl mx-auto" id="main-page-content">
             {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center mb-16"
             >
-                <br /><br />
 
                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
                     My <span className="text-blue-600">Bookings</span>
                 </h1>
-               
+
             </motion.div>
 
             {/* Navigation Tabs */}
@@ -277,7 +429,14 @@ const BookingOrder = () => {
                                         <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mb-1">Total Impact</p>
                                         <p className="text-[40px] leading-none font-black text-blue-600 tracking-tighter">₹{booking.TotalPay}</p>
                                         <div className="mt-4 flex justify-end">
-                                            <span className="text-[9px] text-[#00A65A] dark:text-emerald-400 font-black uppercase tracking-wider bg-[#E8F8F0] dark:bg-emerald-900/20 px-4 py-1.5 rounded-full inline-block">Payment Success</span>
+                                            <span className={`text-[9px] font-black uppercase tracking-wider px-4 py-1.5 rounded-full inline-block ${booking.status === 'confirmed'
+                                                ? 'text-[#00A65A] dark:text-emerald-400 bg-[#E8F8F0] dark:bg-emerald-900/20'
+                                                : booking.status === 'pending'
+                                                    ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20'
+                                                    : 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20'
+                                                }`}>
+                                                {booking.status === 'confirmed' ? 'Payment Success' : booking.status === 'pending' ? 'Pay After (In Person)' : 'Booking Cancelled'}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -292,14 +451,27 @@ const BookingOrder = () => {
                                             </button>
                                         )}
                                         {activeTab === 'active' && (booking.status === 'pending' || booking.status === 'confirmed') && (
-                                            <button
-                                                onClick={() => handleCancelBooking(booking._id)}
-                                                className="flex items-center gap-2 px-6 py-4 bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-600 hover:text-white rounded-[14px] font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 group/cancel"
-                                                title="Cancel Booking"
-                                            >
-                                                <FaTimesCircle className="group-hover/cancel:rotate-90 transition-transform" size={14} /> 
-                                                <span>Cancel Booking</span>
-                                            </button>
+                                            <>
+                                                {booking.status === 'pending' && (
+                                                    <button
+                                                        onClick={() => { setPayingBooking(booking); setShowPayModal(true); }}
+                                                        className="flex items-center gap-2 px-6 py-4 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-[14px] font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 group/pay"
+                                                    >
+                                                        <FaCreditCard size={14} />
+                                                        <span>Payment</span>
+                                                    </button>
+                                                )}
+                                                {isCancellable(booking.fromDate) && (
+                                                    <button
+                                                        onClick={() => handleCancelBooking(booking._id, booking.fromDate)}
+                                                        className="flex items-center gap-2 px-6 py-4 bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-600 hover:text-white rounded-[14px] font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 group/cancel"
+                                                        title="Cancel Booking"
+                                                    >
+                                                        <FaTimesCircle className="group-hover/cancel:rotate-90 transition-transform" size={14} />
+                                                        <span>Cancel Booking</span>
+                                                    </button>
+                                                )}
+                                            </>
                                         )}
                                         <button
                                             onClick={() => { setSelectedBooking(booking); setShowModal(true); }}
@@ -327,11 +499,13 @@ const BookingOrder = () => {
                     )}
                 </AnimatePresence>
             </div>
+            </div>
 
             {/* Details & Invoice Modal - Professional Protocol */}
+            <div id="invoice-print-area">
             <AnimatePresence>
                 {showModal && selectedBooking && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 invoice-modal-wrapper">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -346,92 +520,135 @@ const BookingOrder = () => {
                             className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-slate-800 invoice-content flex flex-col max-h-[90vh]"
                         >
                             {/* Scrollable Content Container */}
-                            <div className="overflow-y-auto custom-scrollbar p-10 md:p-14">
-                                <div className="space-y-12">
-                                    {/* Brand & ID Protocol */}
-                                    <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-10">
+                            <div className="overflow-y-auto custom-scrollbar p-10 md:p-14 invoice-scroll-container">
+                                {/* Invoice Content */}
+                                <div className="space-y-10">
+                                    {/* Header */}
+                                    <div className="flex flex-col md:flex-row justify-between items-start border-b-2 border-slate-100 dark:border-slate-800 pb-8 gap-6">
                                         <div>
-                                            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-widest uppercase">LX<span className="text-blue-600">RENTAL</span></h2>
-                                            <p className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase mt-2">Premium Mobility Solutions</p>
+                                            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">TAX <span className="text-blue-600">INVOICE</span></h1>
+                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">LX Rental Services • Official Receipt</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-60">Deployment Token</p>
-                                            <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">#{selectedBooking._id.slice(-8).toUpperCase()}</p>
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">{new Date().toLocaleDateString()}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Asset Information - Refined */}
-                                    <div className="flex flex-col md:flex-row gap-8 items-center bg-slate-50 dark:bg-slate-950 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 relative group">
-                                        <div className="w-full md:w-56 h-36 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 flex-shrink-0 group-hover:shadow-xl transition-all duration-700 shadow-sm">
-                                            <img src={selectedBooking.carId?.carImage} alt="Car" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                                        </div>
-                                        <div className="flex-1 w-full text-center md:text-left">
-                                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-2">Asset Assigned</p>
-                                            <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-3 leading-none">{selectedBooking.carId?.carName}</h3>
-                                            <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                                                <span className="text-[9px] font-black uppercase tracking-widest bg-white dark:bg-slate-800 text-slate-500 px-4 py-1.5 rounded-full border border-slate-100 dark:border-slate-800">{selectedBooking.carId?.carCategory}</span>
-                                                <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 px-4 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-800">Clearance Granted</span>
+                                        <div className="text-left md:text-right space-y-1">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Invoice Number</span>
+                                                <span className="text-lg font-black text-slate-900 dark:text-white uppercase">#INV-{selectedBooking._id.slice(-8).toUpperCase()}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date of Issue</span>
+                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{new Date(selectedBooking.createdAt).toLocaleDateString("en-GB", { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Logistics Protocol Grid */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="bg-white dark:bg-slate-900/50 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 space-y-6 shadow-sm">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
-                                                <span className="w-1 h-3 bg-blue-600 rounded-full"></span> Deployment Window
-                                            </p>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60 mb-1">Pickup Execution</p>
-                                                    <p className="text-lg font-black text-slate-800 dark:text-slate-200">
-                                                        {new Date(selectedBooking.fromDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60 mb-1">Handover Protocol</p>
-                                                    <p className="text-lg font-black text-slate-800 dark:text-slate-200">
-                                                        {new Date(selectedBooking.toDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                    </p>
-                                                </div>
+                                    {/* Billing Information */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                        <div className="space-y-3">
+                                            <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-[0.2em]">Billed To</h4>
+                                            <div className="space-y-1">
+                                                <p className="text-xl font-black text-slate-900 dark:text-white">{selectedBooking.userId?.name || "Valued Customer"}</p>
+                                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{selectedBooking.userId?.email || "customer@example.com"}</p>
+                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">{selectedBooking.carId?.location || "Surat, Gujarat"}</p>
                                             </div>
                                         </div>
-                                        <div className="bg-white dark:bg-slate-900/50 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 space-y-6 shadow-sm">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
-                                                <span className="w-1 h-3 bg-rose-500 rounded-full"></span> Hub Logistics
-                                            </p>
+                                        <div className="space-y-3 md:text-right">
+                                            <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-[0.2em]">Operational Hub</h4>
+                                            <div className="space-y-1">
+                                                <p className="text-xl font-black text-slate-900 dark:text-white">LX Rental Hub</p>
+                                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Main Square Road, Premium Wing</p>
+                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">GSTIN: 24AAACR1234A1Z1</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Asset Details Table */}
+                                    <div className="border border-slate-100 dark:border-slate-800 rounded-[2rem] overflow-hidden bg-slate-50/50 dark:bg-slate-950/50">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-slate-100 dark:border-slate-800">
+                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Service Item</th>
+                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Duration</th>
+                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Impact</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-16 h-12 bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-white/5 flex-shrink-0">
+                                                                <img src={selectedBooking.carId?.carImage} alt="" className="w-full h-full object-cover" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">{selectedBooking.carId?.carName}</p>
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedBooking.carId?.carCategory} • {selectedBooking.carId?.carFuel} • {selectedBooking.carId?.carGear}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-center">
+                                                        <p className="text-sm font-black text-slate-700 dark:text-slate-300">
+                                                            {Math.ceil((new Date(selectedBooking.toDate) - new Date(selectedBooking.fromDate)) / (1000 * 60 * 60 * 24)) + 1} Days
+                                                        </p>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rental Period</p>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-right">
+                                                        <p className="text-lg font-black text-blue-600 tracking-tight">₹{selectedBooking.TotalPay}</p>
+                                                        <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md">Paid</span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Deployment Window Context */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="p-6 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                                <FaCalendarAlt size={14} />
+                                            </div>
                                             <div>
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60 mb-1">Base Region</p>
-                                                <p className="text-lg font-black text-slate-800 dark:text-slate-200">{selectedBooking.carId?.location}</p>
-                                                <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-950/50 rounded-2xl text-[11px] text-slate-500 dark:text-slate-400 font-medium italic leading-relaxed border border-slate-100 dark:border-slate-800/50">
-                                                    "Asset will be staged and prepped at the primary partner hub."
-                                                </div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pickup Execution</p>
+                                                <p className="text-xs font-black text-slate-900 dark:text-white uppercase">{new Date(selectedBooking.fromDate).toLocaleDateString("en-GB", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                            </div>
+                                        </div>
+                                        <div className="p-6 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-rose-500/20">
+                                                <FaMapMarkerAlt size={14} />
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Return Protocol</p>
+                                                <p className="text-xs font-black text-slate-900 dark:text-white uppercase">{new Date(selectedBooking.toDate).toLocaleDateString("en-GB", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Financial Settlement */}
-                                    <div className="pt-4">
-                                        <div className="flex justify-between items-center bg-slate-950 dark:bg-blue-600 p-8 md:p-10 rounded-[2.5rem] text-white shadow-2xl shadow-blue-500/10 relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -translate-y-24 translate-x-24 group-hover:scale-150 transition-transform duration-700"></div>
-                                            <div className="relative z-10">
-                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 opacity-50">Total Operational Cost</p>
-                                                <p className="text-[10px] font-black uppercase tracking-widest bg-white/10 w-fit px-3 py-1 rounded-md">Fully Settled · Verified</p>
+                                    {/* Final Seal */}
+                                    <div className="pt-6 border-t-2 border-dashed border-slate-100 dark:border-slate-800">
+                                        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                                            <div className="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-900/10 px-6 py-3 rounded-full border border-emerald-100 dark:border-emerald-800/30">
+                                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em]">Transaction Verified & Sealed</span>
                                             </div>
-                                            <div className="relative z-10 text-right">
-                                                <p className="text-5xl font-black tracking-tighter italic">₹{selectedBooking.TotalPay}</p>
-                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mt-2 block">Direct Digital Transfer</span>
+                                            <div className="text-center md:text-right">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Grand Total (Inclusive of all taxes)</p>
+                                                <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic">₹{selectedBooking.TotalPay}</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <button
-                                        onClick={() => window.print()}
-                                        className="w-full mt-10 py-6 bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-black text-[11px] uppercase tracking-[0.4em] rounded-2xl hover:bg-blue-600 hover:text-white transition-all active:scale-95 no-print shadow-xl shadow-slate-900/10"
-                                    >
-                                        Export Deployment Protocol (PDF)
-                                    </button>
+                                    <div className="flex flex-col sm:flex-row gap-4 no-print">
+                                        <button
+                                            onClick={() => window.print()}
+                                            className="flex-1 py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-xl shadow-slate-900/10"
+                                        >
+                                            Download PDF Protocol
+                                        </button>
+                                        <button
+                                            onClick={() => setShowModal(false)}
+                                            className="px-10 py-5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl hover:bg-rose-50 hover:text-rose-500 transition-all active:scale-95"
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
@@ -467,8 +684,8 @@ const BookingOrder = () => {
                             <div className="space-y-10">
                                 <div className="flex justify-center gap-3">
                                     {[1, 2, 3, 4, 5].map(i => (
-                                        <button 
-                                            key={i} 
+                                        <button
+                                            key={i}
                                             onClick={() => setReviewRating(i)}
                                             className={`transition-all duration-300 transform active:scale-95 ${reviewRating >= i ? "text-amber-500 scale-125" : "text-slate-100 dark:text-slate-800"}`}
                                         >
@@ -495,8 +712,8 @@ const BookingOrder = () => {
                                 >
                                     {submittingReview ? "Archiving Signal..." : "Submit Experience Intel"}
                                 </button>
-                                
-                                <button 
+
+                                <button
                                     onClick={() => setShowReviewModal(false)}
                                     className="w-full text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors"
                                 >
@@ -507,6 +724,94 @@ const BookingOrder = () => {
                     </div>
                 )}
             </AnimatePresence>
+            {/* Pay Now Modal - Secure Settlement Protocol */}
+            <AnimatePresence>
+                {showPayModal && payingBooking && (
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowPayModal(false)}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                            className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] p-10 shadow-[0_50px_100px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-slate-800"
+                        >
+                            <div className="text-center mb-10">
+                                <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                                    <FaCreditCard size={24} />
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-widest leading-none">Payment</h3>
+                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-3">Grand Total: ₹{payingBooking.TotalPay}</p>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="group">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-4">Card Signature</label>
+                                    <input
+                                        type="text"
+                                        maxLength="19"
+                                        placeholder="XXXX XXXX XXXX XXXX"
+                                        value={cardNumber}
+                                        onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                                        className="w-full p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500/50 transition-all shadow-inner"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-4">Expiry</label>
+                                        <input
+                                            type="text"
+                                            maxLength="5"
+                                            placeholder="MM/YY"
+                                            value={expiry}
+                                            onChange={(e) => setExpiry(formatExpiry(e.target.value))}
+                                            className="w-full p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500/50 transition-all shadow-inner"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-4">CVV</label>
+                                        <input
+                                            type="password"
+                                            maxLength="3"
+                                            placeholder="•••"
+                                            value={cvv}
+                                            onChange={(e) => setCvv(e.target.value.replace(/[^0-9]/g, ''))}
+                                            className="w-full p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500/50 tracking-widest transition-all shadow-inner"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl flex items-center gap-4 border border-blue-100 dark:border-blue-800/30">
+                                    <FaLock className="text-blue-600" size={16} />
+                                    <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest leading-relaxed">Your transaction is encrypted with 256-bit AES protocols for maximum security.</p>
+                                </div>
+
+                                <button
+                                    onClick={handleProcessPayNow}
+                                    disabled={processingPayment}
+                                    className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl shadow-emerald-500/10 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-wait"
+                                >
+                                    {processingPayment ? "Synchronizing..." : `Finalize ₹${payingBooking.TotalPay}`}
+                                </button>
+
+                                <button
+                                    onClick={() => setShowPayModal(false)}
+                                    className="w-full text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+            </div>
         </div>
     );
 };

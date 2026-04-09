@@ -107,8 +107,8 @@ const AdminLogin = ({ onLoginSuccess }) => {
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  Initialize Access
-                  <FaCar className="group-hover:translate-x-1 transition-transform" />
+                  Login
+                  {/* <FaCar className="group-hover:translate-x-1 transition-transform" /> */}
                 </>
               )}
             </button>
@@ -116,13 +116,13 @@ const AdminLogin = ({ onLoginSuccess }) => {
 
           <div className="mt-8 pt-8 border-t border-slate-800/50 flex flex-col items-center gap-4 text-center">
             <p className="text-[10px] text-slate-600 font-bold uppercase tracking-[0.2em]">
-              Security Protocol v4.0.2 Active
+              {/* Security Protocol v4.0.2 Active */}
             </p>
             <button
               onClick={() => window.location.href = '/'}
               className="text-xs font-bold text-slate-500 hover:text-white transition-colors flex items-center gap-2"
             >
-              Return to Public Site
+              {/* Return to Public Site */}
             </button>
           </div>
         </div>

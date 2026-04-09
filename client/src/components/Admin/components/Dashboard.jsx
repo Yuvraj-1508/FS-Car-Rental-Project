@@ -35,7 +35,7 @@ const Dashboard = () => {
       if (bookingsRes.data?.success) {
         const bookings = bookingsRes.data.bookings;
         setTotalBookings(bookings.length);
-        
+
         // Revenue calculation
         const totalRevenue = bookings.reduce((acc, curr) => {
           const payment = Number(curr.TotalPay) || 0;
@@ -49,10 +49,10 @@ const Dashboard = () => {
           acc[month] = (acc[month] || 0) + (Number(b.TotalPay) || 0);
           return acc;
         }, {});
-        
-        const formattedData = Object.keys(monthlyData).map(m => ({ 
-            name: m, 
-            revenue: monthlyData[m] 
+
+        const formattedData = Object.keys(monthlyData).map(m => ({
+          name: m,
+          revenue: monthlyData[m]
         }));
         setChartData(formattedData);
       }
@@ -97,7 +97,7 @@ const Dashboard = () => {
           <p className="text-slate-400 mt-2 font-bold uppercase text-[10px] tracking-[0.3em]">Operational Oversight & Logistics</p>
         </div>
         <div className="hidden md:block">
-           <button onClick={fetchDashboardData} className="px-6 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all">Refresh</button>
+          <button onClick={fetchDashboardData} className="px-6 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all">Refresh</button>
         </div>
       </motion.div>
 
@@ -143,14 +143,14 @@ const Dashboard = () => {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#64748b'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#64748b'}} />
-                <Tooltip 
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#64748b' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#64748b' }} />
+                <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '16px', padding: '12px' }}
                   itemStyle={{ color: '#fff', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
                   cursor={{ stroke: '#2563eb', strokeWidth: 2 }}
@@ -167,37 +167,37 @@ const Dashboard = () => {
           className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-white flex flex-col justify-between"
         >
           <div>
-             <h2 className="text-xl font-black uppercase tracking-tight mb-2">Car Pulse</h2>
-             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Platform Health Status</p>
-             <div className="mt-8 space-y-6">
-                <div>
-                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
-                      <span>Utilization</span>
-                      <span className="text-blue-400">84%</span>
-                   </div>
-                   <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-600 w-[84%]"></div>
-                   </div>
+            <h2 className="text-xl font-black uppercase tracking-tight mb-2">Car Pulse</h2>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Platform Health Status</p>
+            <div className="mt-8 space-y-6">
+              <div>
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+                  <span>Utilization</span>
+                  <span className="text-blue-400">84%</span>
                 </div>
-                <div>
-                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
-                      <span>Reliability</span>
-                      <span className="text-emerald-400">99.2%</span>
-                   </div>
-                   <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 w-[99%]"></div>
-                   </div>
+                <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-600 w-[84%]"></div>
                 </div>
-             </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+                  <span>Reliability</span>
+                  <span className="text-emerald-400">99.2%</span>
+                </div>
+                <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 w-[99%]"></div>
+                </div>
+              </div>
+            </div>
           </div>
-          
+
           <div className="mt-8 p-6 bg-slate-800/50 rounded-3xl border border-slate-800">
-             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Valuation</p>
-             <p className="text-3xl font-black text-white italic">₹{revenue.toLocaleString('en-IN')}</p>
-             <div className="mt-4 flex items-center gap-2 text-[8px] font-black text-emerald-400 uppercase tracking-widest">
-                <span className="p-1 bg-emerald-500/20 rounded-full">↑ 12%</span>
-                <span>Vs Last Month</span>
-             </div>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Valuation</p>
+            <p className="text-3xl font-black text-white italic">₹{revenue.toLocaleString('en-IN')}</p>
+            <div className="mt-4 flex items-center gap-2 text-[8px] font-black text-emerald-400 uppercase tracking-widest">
+              <span className="p-1 bg-emerald-500/20 rounded-full">↑ 12%</span>
+              <span>Vs Last Month</span>
+            </div>
           </div>
           <Link to="/admin/bookings" className="w-full mt-6 py-4 bg-white text-slate-900 rounded-xl text-center font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">Audit Logs</Link>
         </motion.div>

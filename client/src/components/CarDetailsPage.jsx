@@ -244,7 +244,24 @@ const BookingForm = ({ car }) => {
     const [step, setStep] = useState(1);
     const [existingBookings, setExistingBookings] = useState([]);
     const [isOverlapping, setIsOverlapping] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState("now");
     const navigate = useNavigate();
+
+    const getDaysUntilPickup = () => {
+        if (!fromDate) return 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = new Date(fromDate);
+        start.setHours(0, 0, 0, 0);
+        const diffTime = start - today;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    };
+
+    useEffect(() => {
+        if (getDaysUntilPickup() < 4) {
+            setPaymentMethod("now");
+        }
+    }, [fromDate]);
 
     // Fetch existing bookings to check for overlap
     useEffect(() => {
@@ -281,7 +298,7 @@ const BookingForm = ({ car }) => {
         const overlap = existingBookings.some((b) => {
             const bStartStr = b.fromDate.split('T')[0];
             const bEndStr = b.toDate.split('T')[0];
-            
+
             // Standard overlap logic: (StartA <= EndB) and (EndA >= StartB)
             return startStr <= bEndStr && endStr >= bStartStr;
         });
@@ -301,8 +318,13 @@ const BookingForm = ({ car }) => {
     const handleNextToPayment = () => {
         if (!fromDate || !toDate) return toast.error("Deployment window required");
         if (new Date(toDate) < new Date(fromDate)) return toast.error("Timeline paradox: return before pickup");
-        if (isOverlapping) return; // Logic handled in render
-        setStep(2);
+        if (isOverlapping) return;
+
+        if (paymentMethod === "later") {
+            handleBooking();
+        } else {
+            setStep(2);
+        }
     };
 
     const formatCardNumber = (value) => {
@@ -321,29 +343,37 @@ const BookingForm = ({ car }) => {
     };
 
     const handleBooking = async () => {
-        if (!cardNumber || !expiry || !cvv) return toast.error("Card credentials required");
+        if (paymentMethod === "now" && (!cardNumber || !expiry || !cvv)) return toast.error("Card credentials required");
         const token = localStorage.getItem("Authorization");
         if (!token) return toast.error("Session expired. Please login.");
-        
+
         setLoading(true);
         try {
-            const bookingRes = await axios.post(`${base_url}/api/new/booking`, 
-                { carId: car._id, fromDate, toDate, status: "confirmed" },
+            const bookingRes = await axios.post(`${base_url}/api/new/booking`,
+                {
+                    carId: car._id,
+                    fromDate,
+                    toDate,
+                    status: paymentMethod === "later" ? "pending" : "confirmed"
+                },
                 { headers: { Authorization: token } }
             );
 
             if (bookingRes.data.success) {
                 const totalAmount = calculateTotal();
-                await axios.post(`${base_url}/api/process/payment`, {
-                    bookingId: bookingRes.data.booking._id,
-                    cardNumber: cardNumber.replace(/\s/g, ''),
-                    expDate: expiry,
-                    cvv: cvv,
-                    amount: totalAmount
-                }, { headers: { Authorization: token } });
+
+                if (paymentMethod === "now") {
+                    await axios.post(`${base_url}/api/process/payment`, {
+                        bookingId: bookingRes.data.booking._id,
+                        cardNumber: cardNumber.replace(/\s/g, ''),
+                        expDate: expiry,
+                        cvv: cvv,
+                        amount: totalAmount
+                    }, { headers: { Authorization: token } });
+                }
 
                 setStep(3);
-                toast.success("Transaction Secured");
+                toast.success(paymentMethod === "now" ? "Transaction Secured" : "Reservation Confirmed (Pay Later)");
                 setTimeout(() => navigate("/bookings"), 2500);
             } else {
                 toast.error(bookingRes.data.message);
@@ -398,15 +428,35 @@ const BookingForm = ({ car }) => {
                             </div>
                         </div>
                         <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
+                            {getDaysUntilPickup() >= 4 && (
+                                <div className="space-y-3 mb-8">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Payment Schedule</label>
+                                    <div className="flex p-1.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                        <button
+                                            onClick={() => setPaymentMethod("now")}
+                                            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === "now" ? "bg-white dark:bg-slate-800 text-blue-600 shadow-sm" : "text-slate-400"}`}
+                                        >
+                                            Pay Now
+                                        </button>
+                                        <button
+                                            onClick={() => setPaymentMethod("later")}
+                                            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === "later" ? "bg-white dark:bg-slate-800 text-blue-600 shadow-sm" : "text-slate-400"}`}
+                                        >
+                                            Pay After
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex justify-between items-end mb-8">
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 leading-none">Total Investment</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 leading-none">Total Amount</p>
                                     <p className="text-3xl font-black text-blue-600 tracking-tighter">₹{calculateTotal().toLocaleString('en-IN')}</p>
                                 </div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic opacity-50">Incl. VAT & Insurance</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic opacity-50">Incl. TAX & Insurance</p>
                             </div>
-                            <button onClick={handleNextToPayment} className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3">
-                                Secure Deployment <FaChevronRight />
+                            <button onClick={handleNextToPayment} disabled={loading} className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3">
+                                {loading ? "Initializing..." : paymentMethod === "now" ? "Secure Deployment" : "Confirm Reservation"} <FaChevronRight />
                             </button>
                         </div>
                     </motion.div>

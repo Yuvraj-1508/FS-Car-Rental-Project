@@ -104,8 +104,9 @@ const MyBooking = async (req, res) => {
     try {
         const userId = req.user.id;
         let bookings = await BookingModel.find({ userId })
-            .sort({ created_at: -1 })
-            .populate("carId"); // include carImage
+            .sort({ createdAt: -1 })
+            .populate("carId")
+            .populate("userId", "name email"); // include user info for invoice
 
         if (!bookings || bookings.length === 0) {
             return res.status(404).json({

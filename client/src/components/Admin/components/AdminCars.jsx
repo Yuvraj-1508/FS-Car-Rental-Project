@@ -1,3 +1,4 @@
+import Swal from "sweetalert2";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useForm } from "react-hook-form";
@@ -72,11 +73,9 @@ const AdminCars = () => {
 
       Object.entries(formDataValues).forEach(([key, value]) => {
         if (key === "carImage") {
-          // Only append carImage if it's a File object (user picked a new one)
           if (value && value[0] instanceof File) {
             formData.append("carImage", value[0]);
           }
-          // Else: Don't append. Backend should preserve old image if field is missing.
         } else {
           formData.append(key, value);
         }
@@ -89,13 +88,13 @@ const AdminCars = () => {
       });
 
       if (res.data.success) {
-        toast.success("Fleet Asset Reconfigured");
+        toast.success("Car Details Update");
         setShowEditModal(false);
         fetchCars();
       }
     } catch (err) {
       console.error(err);
-      toast.error("Fleet Update Failed. Please check network connection or asset data.");
+      toast.error("Fleet Update Failed");
     } finally {
       setLoading(false);
     }
@@ -128,22 +127,48 @@ const AdminCars = () => {
 
   // Delete Car
   const deleteCar = async (id) => {
-    if (!window.confirm("Permanent Deletion: Are you sure?")) return;
-    try {
-      setLoading(true);
-      const res = await axios.delete(`${base_url}/api/delete/car/${id}`, {
-        headers: { Authorization: localStorage.getItem("Authorization") }
-      });
-      if (res.data.success) {
-        toast.success("Asset decommissioned successfully");
-        fetchCars();
+    Swal.fire({
+      title: 'Decommission Asset',
+      text: "Permanent action: This vehicle will be removed from the fleet intelligence database.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#2563eb',
+      cancelButtonColor: '#f43f5e',
+      confirmButtonText: 'Yes, Decommission',
+      cancelButtonText: 'Abort',
+      background: '#ffffff',
+      borderRadius: '2.5rem',
+      customClass: {
+        popup: 'rounded-[2.5rem] border border-slate-100 shadow-2xl',
+        title: 'text-2xl font-black uppercase tracking-tighter text-slate-900',
+        confirmButton: 'rounded-2xl font-black uppercase text-[10px] tracking-widest px-8 py-4',
+        cancelButton: 'rounded-2xl font-black uppercase text-[10px] tracking-widest px-8 py-4'
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Decommissioning failed");
-    } finally {
-      setLoading(false);
-    }
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          setLoading(true);
+          const res = await axios.delete(`${base_url}/api/delete/car/${id}`, {
+            headers: { Authorization: localStorage.getItem("Authorization") }
+          });
+          if (res.data.success) {
+            Swal.fire({
+              title: 'Asset Purged',
+              text: 'The vehicle records have been successfully decommissioned.',
+              icon: 'success',
+              confirmButtonColor: '#2563eb',
+              borderRadius: '2rem'
+            });
+            fetchCars();
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error("Decommissioning failed");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   useEffect(() => {
@@ -323,7 +348,7 @@ const AdminCars = () => {
         )}
 
         {showEditModal && selectedCar && (
-          <Modal title="Reconfigure Asset" onClose={() => setShowEditModal(false)}>
+          <Modal title="Cars Details" onClose={() => setShowEditModal(false)}>
             <CarForm
               onSubmit={updateCar}
               onClose={() => setShowEditModal(false)}
@@ -382,14 +407,29 @@ const Modal = ({ title, children, onClose }) => (
   </div>
 );
 
-const CarForm = ({ onSubmit, onClose, defaultValues = {}, isEdit = false }) => {
+const INITIAL_CAR_VALUES = {
+  carName: "",
+  carCategory: "Sedan",
+  carYear: new Date().getFullYear().toString(),
+  carSeats: "5",
+  carFuel: "Petrol",
+  carGear: "Manual",
+  location: "",
+  carRent: "",
+  carImage: null
+};
+
+const CarForm = ({ onSubmit, onClose, defaultValues = INITIAL_CAR_VALUES, isEdit = false }) => {
   const { register, handleSubmit, reset, watch } = useForm({ defaultValues });
   const imagePreview = watch("carImage");
   const [filePreview, setFilePreview] = useState(null);
 
+  // Use a ref or a stable ID to prevent infinite reset loops
+  const defaultValuesId = defaultValues?._id || 'new';
+
   useEffect(() => {
     reset(defaultValues);
-  }, [defaultValues, reset]);
+  }, [defaultValuesId, reset]);
 
   useEffect(() => {
     if (imagePreview && imagePreview[0] instanceof File) {
@@ -399,7 +439,7 @@ const CarForm = ({ onSubmit, onClose, defaultValues = {}, isEdit = false }) => {
     } else {
       setFilePreview(null);
     }
-  }, [imagePreview]);
+  }, [imagePreview ? (imagePreview[0]?.name + imagePreview[0]?.size) : null]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
@@ -435,7 +475,7 @@ const CarForm = ({ onSubmit, onClose, defaultValues = {}, isEdit = false }) => {
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 mb-2 block group-focus-within:text-blue-600 transition-colors">
             {isEdit ? "Asset Image Override" : "Register Fleet Image"}
           </label>
-          
+
           {/* Always show the Upload Zone */}
           <div className="relative border-2 border-dashed border-slate-200 rounded-3xl p-8 transition-all group-hover:border-blue-500 bg-slate-50 flex flex-col items-center justify-center overflow-hidden">
             <input
@@ -452,10 +492,10 @@ const CarForm = ({ onSubmit, onClose, defaultValues = {}, isEdit = false }) => {
 
           {/* Show Preview Pill below if a NEW image is selected */}
           {filePreview && (
-            <motion.div 
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               className="mt-4 flex items-center justify-between gap-3 px-6 py-4 bg-blue-50/50 rounded-2xl border border-blue-100 shadow-sm"
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 flex items-center justify-between gap-3 px-6 py-4 bg-blue-50/50 rounded-2xl border border-blue-100 shadow-sm"
             >
               <div className="flex items-center gap-3">
                 <img src={filePreview} className="w-10 h-10 rounded-xl object-cover border border-blue-200" alt="new preview" />
@@ -463,7 +503,7 @@ const CarForm = ({ onSubmit, onClose, defaultValues = {}, isEdit = false }) => {
                   Ready: <span className="text-blue-600 italic ml-1">New Asset Selected</span>
                 </p>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={(e) => {
                   setFilePreview(null);
@@ -498,7 +538,7 @@ const CarForm = ({ onSubmit, onClose, defaultValues = {}, isEdit = false }) => {
           Cancel
         </button>
         <button className="px-12 py-5 bg-blue-600 text-white rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95">
-          {isEdit ? "Reconfigure Asset" : "Submit"}
+          {isEdit ? "Update Details" : "Submit"}
         </button>
       </div>
     </form>

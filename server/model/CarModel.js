@@ -12,7 +12,7 @@ const CarSchema = new mongoose.Schema({
     },
     carCategory: {
         type: String,
-        enum: ["Sedan", "SUV", "Hatchback", "Coupe", "Convertible", "Wagon", "Van", "Pickup", "Sports"],
+        enum: ["Sedan", "SUV", "Hatchback", "Coupe", "Convertible", "Wagon", "Van", "Pickup", "Sports", "Luxury"],
         required: true
     },
     carYear: {
@@ -24,7 +24,7 @@ const CarSchema = new mongoose.Schema({
     },
     carFuel: {
         type: String,
-        enum: ["Diesel", "Hybrid", "Petrol"],
+        enum: ["Diesel", "Hybrid", "Petrol", "Electric"],
         required: true
     },
     carGear: {

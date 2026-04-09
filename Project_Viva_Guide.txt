@@ -1,0 +1,77 @@
+================================================================================
+CAR RENTAL PROJECT - TECHNICAL DOCUMENTATION & VIVA PREPARATION GUIDE
+================================================================================
+
+1. PROJECT OVERVIEW
+------------------
+A premium, full-stack Car Rental Platform (GoCar Elite) designed for luxury car
+service providers. It features a modern user interface, dual-theme support, and
+a robust administrative dashboard for fleet and order management.
+
+2. TECHNOLOGY STACK (The "MERN" Plus)
+--------------------------------------
+* Frontend:
+  - React.js (Component-based UI architecture)
+  - Tailwind CSS (Premium styling & responsive design)
+  - Framer Motion (State-of-the-art animations)
+  - SweetAlert2 (Professional popup dialogs)
+  - React Hot Toast (Real-time notifications)
+  - Axios (Secure API communication)
+
+* Backend:
+  - Node.js & Express.js (High-performance API server)
+  - MongoDB & Mongoose (NoSQL Database for flexible car data)
+  - Formidable (For handling car image uploads)
+  - Nodemailer (Automated welcome & confirmation emails)
+
+3. CORE FEATURES & COMPONENTS
+-----------------------------
+* User Features:
+  - Interactive Showroom (Filtering by Category/Location)
+  - Dynamic Booking Flow (Timeline paradox & overlap protection)
+  - Integrated Payment Simulation
+  - Favorite/Wishlist System (Persistent storage)
+  - Review & Rating Engine (User feedback)
+
+* Admin Features:
+  - Inventory Control (Add/Edit/Remove/Toggle Cars)
+  - Order Management (Confirm or Cancel rentals)
+  - Analytics Intelligence (Visitor traffic tracking)
+  - Revenue Stats (Total expected income)
+
+4. KEY PROJECT COMPONENTS (For Explaination)
+-------------------------------------------
+1. HomePage.jsx: Features the "Analytics Intelligence" and "Featured Cars".
+2. Cars.jsx: The main car gallery with sorting and filtering logic.
+3. CarDetailsPage.jsx: Handles the complex "Booking Logic" and date validation.
+4. AdminCars.jsx: The core of the Admin panel (Fleet management).
+5. Bookings.jsx: Where Admin approves/cancels customer orders.
+
+5. VIVA PREPARATION (Common Questions & Answers)
+-----------------------------------------------
+Q1: How do you prevent two users from booking the same car?
+A: I implemented "Dynamic Overlap Detection" in the BookingForm. It compares the
+   requested dates against existing confirmed bookings for that specific car 
+   using the formula: (Start_A <= End_B) and (End_A >= Start_B).
+
+Q2: Why did you use NoSQL (MongoDB) instead of SQL?
+A: MongoDB is more flexible for car data. Since different cars might have 
+   different features (Electric vs Petrol), NoSQL allows us to store these 
+   attributes without complex table joins.
+
+Q3: How do you handle Admin security?
+A: I implemented a "Navigation Lock" using `popstate` and `beforeunload` events
+   to prevent unauthorized exit and protect the Admin session during sensitive 
+   operations.
+
+Q4: How is state managed in your application?
+A: I used React Hooks (`useState`, `useEffect`) for local state and 
+   Browser Storage (`localStorage`) to maintain JWT tokens for authentication.
+
+Q5: What was the biggest challenge in this project?
+A: Managing the infinite re-render loops in complex forms and ensuring that 
+   frontend image uploads were correctly parsed by the backend server.
+
+================================================================================
+© 2026 GE - GOCAR ELITE PLATFORM
+================================================================================

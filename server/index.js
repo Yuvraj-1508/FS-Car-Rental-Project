@@ -75,6 +75,15 @@ app.post("/new/visiter", async (req, res) => {
 
         if (!email) return res.status(404).json({ message: "email is required!" })
 
+        // Check for existing subscriber
+        const existing = await visiterModel.findOne({ email });
+        if (existing) {
+            return res.status(200).json({
+                success: true,
+                message: "You are already an elite member!"
+            });
+        }
+
         const newVisiter = await visiterModel.create({ email: email });
         await newVisiter.save();
 

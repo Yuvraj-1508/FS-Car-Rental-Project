@@ -2,7 +2,6 @@ import React from "react";
 import Layout from "./layout/Layout";
 import { motion } from "framer-motion";
 import {
-  FaSearch,
   FaQuestionCircle,
   FaBook,
   FaMoneyCheckAlt,
@@ -50,14 +49,7 @@ const HelpCenter = () => {
             How can we <span className="text-blue-500">help you</span> today?
           </motion.h1>
 
-          <div className="max-w-2xl mx-auto relative group">
-            <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
-            <input
-              type="text"
-              placeholder="Search for articles, guides, and more..."
-              className="w-full pl-16 pr-6 py-5 bg-white/5 border border-white/10 rounded-2xl text-white outline-none focus:bg-white/10 focus:border-blue-500/50 transition-all text-lg backdrop-blur-sm"
-            />
-          </div>
+
         </div>
       </section>
 
@@ -121,7 +113,7 @@ const HelpCenter = () => {
               <FaPhoneAlt className="text-3xl text-emerald-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
               <h4 className="font-bold text-slate-900 dark:text-white mb-2">Call Us</h4>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Available 24/7</p>
-              <button className="text-emerald-600 font-bold hover:underline">+1 800 123 456</button>
+              <button className="text-emerald-600 font-bold hover:underline">+91 987654 3210</button>
             </div>
             <div className="p-8 bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/20 rounded-3xl group hover:border-purple-500/50 transition-all">
               <FaEnvelope className="text-3xl text-purple-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />

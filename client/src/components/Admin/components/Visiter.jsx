@@ -1,3 +1,4 @@
+import Swal from 'sweetalert2';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import toast from 'react-hot-toast';
@@ -27,17 +28,45 @@ const Visiter = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Permanent Action: Remove this record?")) return;
-        try {
-            const res = await axios.delete(`${base_url}/remove/visiter/${id}`);
-            if (res.data.success) {
-                toast.success("Visitor record removed");
-                getAllvisiter();
+        Swal.fire({
+            title: 'Permanent Deletion',
+            text: "Are you sure you want to remove this record from the traffic logs?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb', // Matches your blue-600
+            cancelButtonColor: '#f43f5e',
+            confirmButtonText: 'Yes, Decommission',
+            cancelButtonText: 'Abort Request',
+            background: '#ffffff',
+            borderRadius: '2rem',
+            customClass: {
+                popup: 'rounded-[2rem] border border-slate-100 shadow-2xl',
+                title: 'font-black uppercase tracking-tighter text-slate-900',
+                htmlContainer: 'font-medium text-slate-500',
+                confirmButton: 'rounded-xl font-black uppercase text-[10px] tracking-widest px-8 py-4',
+                cancelButton: 'rounded-xl font-black uppercase text-[10px] tracking-widest px-8 py-4'
             }
-        } catch (error) {
-            console.error("Error deleting visitor:", error.message);
-            toast.error(error.message);
-        }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const res = await axios.delete(`${base_url}/remove/visiter/${id}`);
+                    if (res.data.success) {
+                        Swal.fire({
+                            title: 'Decommissioned',
+                            text: 'The visitor intelligence record has been purged.',
+                            icon: 'success',
+                            background: '#ffffff',
+                            borderRadius: '2rem',
+                            confirmButtonColor: '#2563eb'
+                        });
+                        getAllvisiter();
+                    }
+                } catch (error) {
+                    console.error("Error deleting visitor:", error.message);
+                    toast.error("Process Failed: " + error.message);
+                }
+            }
+        });
     };
 
     useEffect(() => {
@@ -77,7 +106,7 @@ const Visiter = () => {
                         className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2"
                         title="Sync Intelligence"
                     >Refresh
-                        <FaSync className={loading ? "animate-spin" : ""} />
+
                     </button>
                 </div>
             </motion.div>

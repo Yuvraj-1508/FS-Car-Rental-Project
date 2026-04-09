@@ -70,19 +70,47 @@ const Bookings = () => {
   };
 
   const handleDeleteBooking = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this booking?"))
-      return;
-    try {
-      const authHeader = localStorage.getItem("Authorization");
-      const res = await axios.delete(`${base_url}/api/delete/booking/${id}`, {
-        headers: { Authorization: authHeader }
-      });
+    Swal.fire({
+      title: 'Delete Booking?',
+      text: "This will permanently remove the booking record from the system history.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#2563eb',
+      cancelButtonColor: '#f43f5e',
+      confirmButtonText: 'Confirm Deletion',
+      cancelButtonText: 'Keep Record',
+      background: '#ffffff',
+      borderRadius: '2.5rem',
+      customClass: {
+        popup: 'rounded-[2.5rem] border border-slate-100 shadow-2xl',
+        title: 'text-2xl font-black uppercase tracking-tighter text-slate-900',
+        confirmButton: 'rounded-2xl font-black uppercase text-[10px] tracking-widest px-8 py-4',
+        cancelButton: 'rounded-2xl font-black uppercase text-[10px] tracking-widest px-8 py-4'
+      }
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const authHeader = localStorage.getItem("Authorization");
+          const res = await axios.delete(`${base_url}/api/delete/booking/${id}`, {
+            headers: { Authorization: authHeader }
+          });
 
-      if (res.data.success)
-        setBookings((prev) => prev.filter((b) => b._id !== id));
-    } catch (err) {
-      console.error("Error deleting booking:", err);
-    }
+          if (res.data.success) {
+            Swal.fire({
+              title: 'Removed!',
+              text: 'The booking chronicle has been cleared.',
+              icon: 'success',
+              confirmButtonColor: '#2563eb',
+              borderRadius: '2rem'
+            });
+            setBookings((prev) => prev.filter((b) => b._id !== id));
+          }
+        } catch (err) {
+          console.error("Error deleting booking:", err);
+          Swal.fire('Failed', 'Unable to delete the record at this moment.', 'error');
+        }
+      }
+    });
   };
 
   useEffect(() => {
