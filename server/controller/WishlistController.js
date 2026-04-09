@@ -32,10 +32,19 @@ const getWishlist = async (req, res) => {
         const userId = req.user.id;
         const wishlist = await WishlistModel.find({ userId }).populate("carId");
         
-        // Filter out null carId in case a car was deleted
-        const cleanedWishlist = wishlist.filter(item => item.carId !== null);
+        // Filter out null carId in case a car was deleted and transform images
+        const transformedWishlist = wishlist
+            .filter(item => item.carId !== null)
+            .map(item => {
+                const car = item.carId.toObject();
+                if (car.carImage) {
+                    const contentType = "image/jpeg";
+                    car.carImage = `data:${contentType};base64,${car.carImage.toString("base64")}`;
+                }
+                return { ...item.toObject(), carId: car };
+            });
 
-        res.status(200).json({ success: true, wishlist: cleanedWishlist });
+        res.status(200).json({ success: true, wishlist: transformedWishlist });
     } catch (error) {
         res.status(500).json({ success: false, message: "Error fetching wishlist", error: error.message });
     }

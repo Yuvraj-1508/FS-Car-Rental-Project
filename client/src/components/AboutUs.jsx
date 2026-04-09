@@ -14,6 +14,8 @@ import {
   FaLeaf 
 } from "react-icons/fa";
 
+const base_url = import.meta.env.VITE_BASE_URL || "https://carrental-eyvf.onrender.com";
+
 const AboutUs = () => {
   const [stats, setStats] = useState({
     cars: 0,
@@ -31,7 +33,7 @@ const AboutUs = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get("http://localhost:9000/api/stats");
+        const response = await axios.get(`${base_url}/api/stats`);
         if (response.data.success) {
           setStats({
             cars: response.data.cars,

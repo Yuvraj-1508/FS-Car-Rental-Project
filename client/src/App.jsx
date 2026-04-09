@@ -18,6 +18,7 @@ import AboutUs from './components/AboutUs';
 import HelpCenter from './components/HelpCenter';
 import TermsOfService from './components/TermsOfService';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import Wishlist from './components/Wishlist';
 
 
 const App = () => {
@@ -43,6 +44,7 @@ const App = () => {
         <Route path='/help' element={<HelpCenter />} />
         <Route path='/terms' element={<TermsOfService />} />
         <Route path='/privacy' element={<PrivacyPolicy />} />
+        <Route path='/wishlist' element={<Wishlist />} />
         <Route
           path="/admin"
           element={<AdminPage />}

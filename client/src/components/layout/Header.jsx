@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FaHome, FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaUserCircle, FaSignOutAlt, FaUserShield, FaTimes, FaGoogle, FaArrowRight } from "react-icons/fa";
+import { FaHome, FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaUserCircle, FaSignOutAlt, FaUserShield, FaTimes, FaGoogle, FaArrowRight, FaHeart } from "react-icons/fa";
 import { MdOutlineBookmarkAdded, MdLogin, MdClose, MdDashboard } from "react-icons/md";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -217,10 +217,18 @@ const Header = () => {
                                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-1">Active Member</p>
                                                 <p className="text-sm font-black text-slate-900 dark:text-white truncate">{welcomeName}</p>
                                             </div>
+                                            <Link
+                                                to="/wishlist"
+                                                className="flex items-center gap-3 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-all"
+                                                onClick={() => setDropdownOpen(false)}
+                                            >
+                                                <FaHeart size={16} className="opacity-50" /> My Wishlist
+                                            </Link>
                                             {role === 1 && (
                                                 <Link
                                                     to="/admin"
                                                     className="flex items-center gap-3 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-all"
+                                                    onClick={() => setDropdownOpen(false)}
                                                 >
                                                     <FaUserShield size={16} className="opacity-50" /> Portal Admin
                                                 </Link>
