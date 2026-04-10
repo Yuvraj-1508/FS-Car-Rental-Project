@@ -128,14 +128,14 @@ const AdminCars = () => {
   // Delete Car
   const deleteCar = async (id) => {
     Swal.fire({
-      title: 'Decommission Asset',
-      text: "Permanent action: This vehicle will be removed from the fleet intelligence database.",
+      title: 'Delete',
+      text: "Permanent action: This vehicle will be removed from the car list.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#2563eb',
       cancelButtonColor: '#f43f5e',
-      confirmButtonText: 'Yes, Decommission',
-      cancelButtonText: 'Abort',
+      confirmButtonText: 'Yes',
+      cancelButtonText: 'Cancel',
       background: '#ffffff',
       borderRadius: '2.5rem',
       customClass: {
@@ -153,8 +153,8 @@ const AdminCars = () => {
           });
           if (res.data.success) {
             Swal.fire({
-              title: 'Asset Purged',
-              text: 'The vehicle records have been successfully decommissioned.',
+              title: 'Success',
+              text: 'The vehicle records have been successfully Deleted.',
               icon: 'success',
               confirmButtonColor: '#2563eb',
               borderRadius: '2rem'

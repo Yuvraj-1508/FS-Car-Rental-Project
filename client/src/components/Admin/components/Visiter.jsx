@@ -29,14 +29,14 @@ const Visiter = () => {
 
     const handleDelete = async (id) => {
         Swal.fire({
-            title: 'Permanent Deletion',
+            title: 'Permanent Delete',
             text: "Are you sure you want to remove this record from the traffic logs?",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#2563eb', // Matches your blue-600
             cancelButtonColor: '#f43f5e',
-            confirmButtonText: 'Yes, Decommission',
-            cancelButtonText: 'Abort Request',
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'Cancel',
             background: '#ffffff',
             borderRadius: '2rem',
             customClass: {
@@ -52,8 +52,8 @@ const Visiter = () => {
                     const res = await axios.delete(`${base_url}/remove/visiter/${id}`);
                     if (res.data.success) {
                         Swal.fire({
-                            title: 'Decommissioned',
-                            text: 'The visitor intelligence record has been purged.',
+                            title: 'Success',
+                            text: 'The visitor record has been Deleted.',
                             icon: 'success',
                             background: '#ffffff',
                             borderRadius: '2rem',
